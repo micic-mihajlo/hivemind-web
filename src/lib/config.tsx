@@ -79,7 +79,7 @@ export const siteConfig = {
     cta: {
       primary: {
         text: "Book a call →",
-        href: "#",
+        href: "https://hivemindintelligence.zohobookings.com/#/hivemindintelligence",
       },
       secondary: {
         text: "Get in Touch",
