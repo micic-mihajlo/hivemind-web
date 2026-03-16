@@ -739,9 +739,9 @@ export const siteConfig = {
     },
   },
   pricing: {
-    title: "Founding Rates",
+    title: "Engagement Options",
     description:
-      "Five founding spots available. Engagements are scoped to each team, then delivered on fixed rate cards. Lock in reduced rates now before standard pricing resumes.",
+      "Every deployment is scoped to your workflows, environment, and support needs. Book a call and we will recommend the right setup path for your team.",
     pricingItems: [
       {
         planType: "setup",

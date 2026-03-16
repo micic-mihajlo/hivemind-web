@@ -9,24 +9,12 @@ import { cn } from "@/lib/utils";
 
 type PricingItem = (typeof siteConfig.pricing.pricingItems)[0] & {
   planType?: "setup" | "managed";
-  launchOfferPrice?: string;
-  standardPrice?: string;
 };
 
 type Tab = "setup" | "managed";
 
-function parseDollars(v: string): number {
-  return parseFloat(v.replace(/[^0-9.]/g, "")) || 0;
-}
-
-function getSavingsPct(founding: string, standard: string): number {
-  const foundingValue = parseDollars(founding);
-  const standardValue = parseDollars(standard);
-  if (!foundingValue || !standardValue || foundingValue >= standardValue) {
-    return 0;
-  }
-  return Math.round((1 - foundingValue / standardValue) * 100);
-}
+const BOOK_CALL_URL =
+  "https://hivemindintelligence.zohobookings.com/#/hivemindintelligence";
 
 function RemoteIcon() {
   return (
@@ -136,19 +124,15 @@ const TIER_META: Record<string, { icon: React.ReactNode; label: string }> = {
 function PricingCard({
   tier,
   delay = 0,
-  formatPrice,
 }: {
   tier: PricingItem;
   delay?: number;
-  formatPrice: (value: string) => string;
 }) {
   const meta = TIER_META[tier.name] ?? { icon: null, label: tier.name };
-  const foundingPrice = tier.launchOfferPrice ?? tier.price;
-  const hasDiscount = Boolean(tier.launchOfferPrice && tier.standardPrice);
-  const savingsPct =
-    hasDiscount && tier.launchOfferPrice && tier.standardPrice
-      ? getSavingsPct(tier.launchOfferPrice, tier.standardPrice)
-      : 0;
+  const scopeCopy =
+    tier.planType === "managed"
+      ? "We will recommend the right support tier after reviewing your active agents, team coverage needs, and response expectations."
+      : "We will scope the right rollout based on your workflows, integrations, team size, and deployment environment.";
 
   return (
     <motion.div
@@ -201,35 +185,19 @@ function PricingCard({
           )}
         </div>
 
-        <div className="mb-6">
-          <div className="flex items-end gap-3 flex-wrap mb-1">
-            <motion.span
-              className="text-[3.25rem] font-black leading-none tracking-[-0.04em] tabular-nums"
-              initial={{ opacity: 0, filter: "blur(8px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{ duration: 0.32, delay: delay + 0.1 }}
-            >
-              {formatPrice(foundingPrice)}
-            </motion.span>
-            {hasDiscount && tier.standardPrice && (
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-[15px] text-muted-foreground/40 line-through tabular-nums font-medium">
-                  {formatPrice(tier.standardPrice)}
-                </span>
-                {savingsPct > 0 && (
-                  <span className="text-[11px] font-bold text-secondary bg-secondary/[0.10] dark:bg-secondary/[0.18] px-2 py-[3px] rounded-full">
-                    Save {savingsPct}%
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          {hasDiscount && tier.standardPrice && (
-            <p className="text-[11px] text-muted-foreground/35 mt-0.5 tracking-tight">
-              {formatPrice(tier.standardPrice)} standard after launch window
-            </p>
-          )}
-        </div>
+        <motion.div
+          className="mb-6 rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-black/[0.025] dark:bg-white/[0.03] px-4 py-3"
+          initial={{ opacity: 0, filter: "blur(8px)" }}
+          animate={{ opacity: 1, filter: "blur(0px)" }}
+          transition={{ duration: 0.32, delay: delay + 0.1 }}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary mb-1.5">
+            Scoped on call
+          </p>
+          <p className="text-[13px] text-foreground/75 leading-relaxed">
+            {scopeCopy}
+          </p>
+        </motion.div>
 
         <div className="h-px bg-black/[0.06] dark:bg-white/[0.06] mb-5" />
 
@@ -249,7 +217,10 @@ function PricingCard({
         </ul>
 
         <div className="flex flex-col gap-2.5">
-          <button
+          <a
+            href={BOOK_CALL_URL}
+            target="_blank"
+            rel="noreferrer"
             className={cn(
               "h-11 w-full flex items-center justify-center text-[13px] font-semibold tracking-tight rounded-full px-4 cursor-pointer transition-all duration-200 active:scale-[0.98]",
               tier.isPopular
@@ -257,8 +228,8 @@ function PricingCard({
                 : `${tier.buttonColor} shadow-[0_1px_3px_0_rgba(0,0,0,0.12),0_1px_2px_-1px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.14)]`,
             )}
           >
-            {tier.buttonText}
-          </button>
+            Book a call
+          </a>
 
           <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/38 tracking-tight">
             <svg
@@ -271,7 +242,7 @@ function PricingCard({
             >
               <path d="M4 0L5 3H8L5.5 5L6.5 8L4 6L1.5 8L2.5 5L0 3H3L4 0Z" />
             </svg>
-            Founding offer · 5 spots remaining
+            We will scope the right fit on the call
           </p>
         </div>
       </div>
@@ -281,11 +252,6 @@ function PricingCard({
 
 export function PricingSection() {
   const [activeTab, setActiveTab] = useState<Tab>("setup");
-  const formatPrice = (value: string) => value.replace(/\s*CAD/gi, "").trim();
-  const pricingLead = "Five founding spots available.";
-  const pricingDescription = siteConfig.pricing.description;
-  const pricingTail = pricingDescription.replace(pricingLead, "").trim();
-
   const pricingItems = siteConfig.pricing.pricingItems as PricingItem[];
   const setupTiers = pricingItems.filter(
     (tier) => tier.planType === "setup" || tier.name.includes("Implementation"),
@@ -317,9 +283,8 @@ export function PricingSection() {
             multiline={false}
             isView
           >
-            {pricingLead}
-          </Highlighter>{" "}
-          {pricingTail}
+            {siteConfig.pricing.description}
+          </Highlighter>
         </p>
       </SectionHeader>
 
@@ -358,11 +323,11 @@ export function PricingSection() {
             <span className="relative inline-flex size-[7px] rounded-full bg-secondary" />
           </span>
           <span className="text-[12px] font-semibold text-secondary tracking-tight">
-            Founding window open
+            Pricing scoped on call
           </span>
           <span className="text-muted-foreground/30">·</span>
           <span className="text-[12px] text-muted-foreground/70 tracking-tight">
-            First 5 clients · up to 29% off
+            We recommend the right deployment path in one intro session
           </span>
         </div>
       </div>
@@ -383,7 +348,6 @@ export function PricingSection() {
                   key={tier.name}
                   tier={tier}
                   delay={index * 0.06}
-                  formatPrice={formatPrice}
                 />
               ))}
             </motion.div>
@@ -401,7 +365,6 @@ export function PricingSection() {
                   key={tier.name}
                   tier={tier}
                   delay={index * 0.06}
-                  formatPrice={formatPrice}
                 />
               ))}
             </motion.div>
