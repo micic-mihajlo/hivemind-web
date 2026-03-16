@@ -129,10 +129,6 @@ function PricingCard({
   delay?: number;
 }) {
   const meta = TIER_META[tier.name] ?? { icon: null, label: tier.name };
-  const scopeCopy =
-    tier.planType === "managed"
-      ? "We will recommend the right support tier after reviewing your active agents, team coverage needs, and response expectations."
-      : "We will scope the right rollout based on your workflows, integrations, team size, and deployment environment.";
 
   return (
     <motion.div
@@ -184,20 +180,6 @@ function PricingCard({
             </span>
           )}
         </div>
-
-        <motion.div
-          className="mb-6 rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-black/[0.025] dark:bg-white/[0.03] px-4 py-3"
-          initial={{ opacity: 0, filter: "blur(8px)" }}
-          animate={{ opacity: 1, filter: "blur(0px)" }}
-          transition={{ duration: 0.32, delay: delay + 0.1 }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary mb-1.5">
-            Scoped on call
-          </p>
-          <p className="text-[13px] text-foreground/75 leading-relaxed">
-            {scopeCopy}
-          </p>
-        </motion.div>
 
         <div className="h-px bg-black/[0.06] dark:bg-white/[0.06] mb-5" />
 
@@ -330,6 +312,11 @@ export function PricingSection() {
             We recommend the right deployment path in one intro session
           </span>
         </div>
+
+        <p className="max-w-2xl px-6 text-center text-sm text-muted-foreground/80 leading-relaxed">
+          Every engagement is scoped on the call based on your workflows,
+          integrations, deployment environment, and support needs.
+        </p>
       </div>
 
       <div className="w-full max-w-6xl mx-auto px-6">
