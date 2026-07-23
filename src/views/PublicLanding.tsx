@@ -1,39 +1,999 @@
-import { HeroSection } from "@/components/sections/hero-section";
-import { CompanyShowcase } from "@/components/sections/company-showcase";
-import { Navbar } from "@/components/sections/navbar";
-import { BentoSection } from "@/components/sections/bento-section";
-import { QuoteSection } from "@/components/sections/quote-section";
-import { BasicsSection } from "@/components/sections/basics-section";
-import { UseCasesSection } from "@/components/sections/use-cases-section";
-import { ObjectionSection } from "@/components/sections/objection-section";
-import { GrowthSection } from "@/components/sections/growth-section";
-import { PricingSection } from "@/components/sections/pricing-section";
-import { FAQSection } from "@/components/sections/faq-section";
-import { CTASection } from "@/components/sections/cta-section";
-import { FooterSection } from "@/components/sections/footer-section";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+const BOOKING_URL =
+  "https://hivemindintelligence.zohobookings.com/4773814000000048056";
+const LINKEDIN_URL = "https://www.linkedin.com/in/kevin-miller-19432b85/";
+
+const quizQuestions = [
+  {
+    question: "What kind of practice do you run?",
+    options: [
+      ["Law firm or solo attorney", 2],
+      ["Medical or dental practice", 2],
+      ["Therapy or counseling practice", 2],
+      ["Other licensed or regulated practice", 1],
+      ["None of the above", 0],
+    ],
+  },
+  {
+    question:
+      "How many hours a week does your highest-billing person spend on admin instead of client work?",
+    options: [
+      ["Under 3 hours", 0],
+      ["3 to 8 hours", 1],
+      ["More than 8 hours", 2],
+    ],
+  },
+  {
+    question: "Which best describes AI use in your practice right now?",
+    options: [
+      ["We have a written policy and approved tools", 0],
+      ["We avoid AI entirely; no one uses it", 1],
+      [
+        "Some people use it, but there is no policy and I am not fully sure how",
+        2,
+      ],
+    ],
+  },
+  {
+    question: "Who decides how your practice adopts new tools or technology?",
+    options: [
+      ["Just me", 2],
+      ["Me and one or two partners", 1],
+      ["A larger group or committee", 0],
+    ],
+  },
+  {
+    question:
+      "Roughly how many different cloud tools touch client or patient data?",
+    options: [
+      ["1 to 2", 0],
+      ["3 to 5", 1],
+      ["6 or more", 2],
+    ],
+  },
+] as const;
+
+const scoreTiers = [
+  {
+    max: 3,
+    eyebrow: "Low exposure",
+    title: "You are mostly frozen, not exposed.",
+    copy: "Your practice probably is not leaking client data through shadow AI use. The cost you are paying right now is speed, not risk. A tight, reachable practice like yours can often move from audit to value quickly because there is little cleanup required.",
+  },
+  {
+    max: 6,
+    eyebrow: "Moderate exposure",
+    title: "Somewhere between frozen and exposed.",
+    copy: "A few signals stood out: possible unofficial AI use, a growing admin load, or client data spread across several tools. The audit is built to replace “probably fine” with a written answer.",
+  },
+  {
+    max: 10,
+    eyebrow: "High exposure",
+    title: "This is the profile the audit was built for.",
+    copy: "Administrative overload, unclear AI use, and client data scattered across cloud tools stack into meaningful exposure. The paid audit maps what is happening, where the risk sits, and what to fix first.",
+  },
+] as const;
+
+function emitAnalytics(name: string, detail: Record<string, unknown> = {}) {
+  window.dispatchEvent(
+    new CustomEvent("hivemind:analytics", { detail: { name, ...detail } }),
+  );
+}
+
+function useLandingEffects() {
+  useEffect(() => {
+    const revealItems = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (reducedMotion || !("IntersectionObserver" in window)) {
+      revealItems.forEach((item) => item.dataset.visible = "true");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          (entry.target as HTMLElement).dataset.visible = "true";
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+    );
+
+    revealItems.forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const bar = document.querySelector<HTMLElement>(".scroll-progress");
+    if (!bar) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const root = document.documentElement;
+      const distance = root.scrollHeight - root.clientHeight;
+      const progress = distance > 0 ? root.scrollTop / distance : 0;
+      bar.style.transform = `scaleX(${progress})`;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+}
+
+function HivemindMark() {
+  return (
+    <svg
+      className="brand-mark"
+      viewBox="0 0 100 100"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="M50 4 90 27v46L50 96 10 73V27Z" />
+      <path d="M32 30v40m0-20h36M68 30v40M50 30v40" />
+      {[34, 45, 56, 67].map((cy) => (
+        <circle key={cy} cx="50" cy={cy} r="2.4" />
+      ))}
+    </svg>
+  );
+}
+
+function BookingLink({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  return (
+    <a
+      className={className}
+      href={BOOKING_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() =>
+        emitAnalytics("booking_start", {
+          label: typeof children === "string" ? children : "Book the audit",
+        })
+      }
+    >
+      {children}
+    </a>
+  );
+}
+
+function HeroField() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    let frame = 0;
+    let width = 0;
+    let height = 0;
+    let pointerX = 0.72;
+    let pointerY = 0.28;
+    const particles = Array.from({ length: 42 }, (_, index) => ({
+      seed: index * 31.17,
+      x: Math.random(),
+      y: 0.13 + Math.random() * 0.78,
+      speed: 0.000035 + Math.random() * 0.000045,
+      radius: 0.6 + Math.random() * 1.25,
+    }));
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+
+    const draw = (time: number) => {
+      context.clearRect(0, 0, width, height);
+      const glow = context.createRadialGradient(
+        pointerX * width,
+        pointerY * height,
+        0,
+        pointerX * width,
+        pointerY * height,
+        Math.max(width, height) * 0.65,
+      );
+      glow.addColorStop(0, "rgba(195,154,91,.12)");
+      glow.addColorStop(0.46, "rgba(34,56,74,.22)");
+      glow.addColorStop(1, "rgba(13,25,36,0)");
+      context.fillStyle = glow;
+      context.fillRect(0, 0, width, height);
+
+      const boundary = height * 0.88;
+      const line = context.createLinearGradient(0, 0, width, 0);
+      line.addColorStop(0, "rgba(166,124,66,0)");
+      line.addColorStop(0.5, "rgba(195,154,91,.5)");
+      line.addColorStop(1, "rgba(166,124,66,0)");
+      context.strokeStyle = line;
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(0, boundary);
+      context.lineTo(width, boundary);
+      context.stroke();
+
+      for (const particle of particles) {
+        const travel = reducedMotion ? 0 : time * particle.speed;
+        const x = ((particle.x + travel) % 1.12) * width;
+        const wave =
+          Math.sin(time * 0.00022 + particle.seed) * height * 0.035;
+        const y = Math.min(particle.y * height + wave, boundary - 8);
+        context.fillStyle = `rgba(195,154,91,${0.16 + particle.radius * 0.12})`;
+        context.beginPath();
+        context.arc(x, y, particle.radius, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      if (!reducedMotion) frame = requestAnimationFrame(draw);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      pointerX += (event.clientX / window.innerWidth - pointerX) * 0.18;
+      pointerY += (event.clientY / window.innerHeight - pointerY) * 0.18;
+    };
+
+    resize();
+    frame = requestAnimationFrame(draw);
+    window.addEventListener("resize", resize);
+    if (!coarsePointer) {
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+    }
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onPointerMove);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="hero-field" aria-hidden="true" />;
+}
+
+function TrustStrip() {
+  const badges = [
+    ["shield", "Secure"],
+    ["lock", "Private"],
+    ["server", "On-premise"],
+    ["person", "Human approval"],
+    ["check", "Verified"],
+  ] as const;
+
+  return (
+    <div className="trust-strip" aria-label="Infrastructure principles">
+      <div className="site-wrap trust-row">
+        {badges.map(([icon, label]) => (
+          <div className="trust-badge" key={label}>
+            <span className={`trust-icon trust-icon-${icon}`} aria-hidden="true" />
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NodeStatus() {
+  const [documents, setDocuments] = useState(1248);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(
+      () => setDocuments((value) => value + 1),
+      2600,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="node-panel" aria-label="Live status of a Hivemind node">
+      <div className="node-head">
+        <span>HIVEMIND NODE 01</span>
+        <span className="node-live" aria-label="Working normally" />
+      </div>
+      {[
+        ["inference", "local", ""],
+        ["model weights", "on premises", ""],
+        ["network", "unplugged", "brass"],
+        ["documents processed", documents.toLocaleString("en-US"), "good"],
+        ["data sent to cloud", "0 bytes", "brass"],
+        ["location", "your office", ""],
+      ].map(([label, value, tone]) => (
+        <div className="node-row" key={label}>
+          <span>{label}</span>
+          <strong className={tone}>{value}</strong>
+        </div>
+      ))}
+      <div className="node-foot">
+        status: working normally <span className="node-cursor" aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+function OfflineDemo() {
+  return (
+    <div
+      className="offline-demo"
+      data-reveal
+      role="img"
+      aria-label="A Hivemind node processes a document after disconnecting from the cloud"
+    >
+      <svg viewBox="0 0 400 190" aria-hidden="true">
+        <line x1="132" y1="95" x2="252" y2="95" className="cable-line" />
+        <path
+          className="cloud-shape"
+          d="M310 100a18 18 0 0 1 0-36 22 22 0 0 1 42-8 16 16 0 0 1 8 31Z"
+        />
+        <text x="330" y="140" className="cloud-x">×</text>
+        <rect x="18" y="65" width="114" height="62" rx="8" className="node-box" />
+        <text x="75" y="52" textAnchor="middle" className="diagram-label">
+          YOUR OFFICE
+        </text>
+        <g className="doc" transform="translate(60 84)">
+          <rect width="30" height="38" rx="3" className="doc-page" />
+          <path d="M6 10h18M6 17h18M6 24h12" className="doc-lines" />
+          <path d="m4 30 6 6 14-14" className="doc-check" />
+        </g>
+      </svg>
+      <p>Network disconnected · Data sent to cloud: 0 bytes</p>
+      <BookingLink className="button button-primary">
+        Schedule your live demo
+      </BookingLink>
+    </div>
+  );
+}
+
+function Scorecard() {
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [copyStatus, setCopyStatus] = useState("");
+  const resultRef = useRef<HTMLDivElement>(null);
+  const complete = Object.keys(answers).length === quizQuestions.length;
+  const score = Object.values(answers).reduce((sum, value) => sum + value, 0);
+  const tier = useMemo(
+    () => scoreTiers.find((item) => score <= item.max) ?? scoreTiers[2],
+    [score],
+  );
+
+  const submit = () => {
+    if (!complete) return;
+    setSubmitted(true);
+    emitAnalytics("scorecard_complete", { score });
+    window.requestAnimationFrame(() => {
+      resultRef.current?.focus({ preventScroll: true });
+      resultRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "center",
+      });
+    });
+  };
+
+  const reset = () => {
+    setAnswers({});
+    setSubmitted(false);
+    setCopyStatus("");
+    document.querySelector("#scorecard")?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  };
+
+  const copyResult = async () => {
+    const text = [
+      "Hivemind AI Exposure Scorecard",
+      tier.eyebrow,
+      tier.title,
+      `Score: ${score}/10`,
+      tier.copy,
+    ].join("\n\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus("Copied to your clipboard.");
+    } catch {
+      setCopyStatus(
+        "Copy was blocked. Select the result text above and copy it manually.",
+      );
+    }
+  };
+
+  return (
+    <section className="scorecard-section" id="scorecard">
+      <div className="site-wrap narrow">
+        <span className="eyebrow">Free scorecard</span>
+        <h2>The Shadow AI Scorecard</h2>
+        <p className="section-intro">
+          Five questions. Two minutes. See where your practice sits before you
+          book anything.
+        </p>
+
+        {!submitted ? (
+          <div className="quiz">
+            {quizQuestions.map((item, questionIndex) => (
+              <fieldset className="question" key={item.question}>
+                <legend>
+                  <span>Question {questionIndex + 1} of 5</span>
+                  {item.question}
+                </legend>
+                <div className="options">
+                  {item.options.map(([label, value]) => {
+                    const selected = answers[questionIndex] === value;
+                    return (
+                      <button
+                        className="option"
+                        data-selected={selected ? "true" : undefined}
+                        type="button"
+                        aria-pressed={selected}
+                        key={label}
+                        onClick={() =>
+                          setAnswers((current) => ({
+                            ...current,
+                            [questionIndex]: value,
+                          }))
+                        }
+                      >
+                        <span>{label}</span>
+                        <span className="option-check" aria-hidden="true">✓</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+            <button
+              className="button button-primary quiz-submit"
+              type="button"
+              disabled={!complete}
+              onClick={submit}
+            >
+              See my score
+            </button>
+          </div>
+        ) : (
+          <div
+            className="score-result"
+            ref={resultRef}
+            tabIndex={-1}
+            role="region"
+            aria-live="polite"
+            aria-label="Scorecard result"
+          >
+            <span className="eyebrow">{tier.eyebrow}</span>
+            <h3>{tier.title}</h3>
+            <div className="score-meter" aria-hidden="true">
+              <span style={{ transform: `scaleX(${score / 10})` }} />
+            </div>
+            <p className="score-number">{score}/10</p>
+            <p>{tier.copy}</p>
+            <p className="result-note">
+              This is a directional read from five questions, not a full risk
+              assessment. The audit produces the written findings.
+            </p>
+            <div className="button-row">
+              <BookingLink className="button button-primary">
+                Book the audit
+              </BookingLink>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={reset}
+              >
+                Retake the scorecard
+              </button>
+            </div>
+            <div className="copy-result">
+              <p>Save the result for your notes or share it with a partner.</p>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={copyResult}
+              >
+                Copy my result
+              </button>
+              <p className="copy-status" role="status">{copyStatus}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const faqItems = [
+  [
+    "What hardware is required?",
+    "A dedicated machine that fits in your office, roughly the size of a small desktop unit. I handle procurement, configuration, and setup. You need an ethernet port and a power outlet.",
+  ],
+  [
+    "How long does installation take?",
+    "Most practices are fully live within two to three weeks from the day the hardware arrives. The first week is setup and configuration. The second is workflow training and staff onboarding.",
+  ],
+  [
+    "Why not just use Copilot or Gemini with enterprise privacy settings?",
+    "Enterprise tiers give you a contract, not an architecture. Your data still leaves the premises and vendor logs can still exist. On-premise removes that trust requirement: the data can remain inside infrastructure you control.",
+  ],
+  [
+    "What about my existing tools like Clio, Dentrix, or Eaglesoft?",
+    "Keep them. The point is not to replace your system of record. We map integration points during the audit and tell you which systems can connect and which workflows need a different path.",
+  ],
+  [
+    "Is this HIPAA-compliant?",
+    "The architecture is designed for practices governed by HIPAA and professional confidentiality duties. Final compliance depends on configuration, access controls, written policies, connected tools, and staff behavior—which is why the engagement starts with an audit.",
+  ],
+  [
+    "What if the audit findings do not justify moving forward?",
+    "Then you will get that answer in writing. The audit has standalone value: a clear map of your admin leaks and exposure points whether or not you hire Hivemind afterward.",
+  ],
+] as const;
 
 export function PublicLanding() {
+  useLandingEffects();
+
   return (
-    <>
-      <div className="max-w-7xl mx-auto border-x relative">
-        <div className="block w-px h-full border-l border-border absolute top-0 left-6 z-10"></div>
-        <div className="block w-px h-full border-r border-border absolute top-0 right-6 z-10"></div>
-        <Navbar />
-        <main className="flex flex-col items-center justify-center divide-y divide-border min-h-screen w-full">
-          <HeroSection />
-          <BentoSection />
-          <CompanyShowcase />
-          <QuoteSection />
-          <BasicsSection />
-          <UseCasesSection />
-          <ObjectionSection />
-          <GrowthSection />
-          <PricingSection />
-          <FAQSection />
-          <CTASection />
-          <FooterSection />
-        </main>
-      </div>
-    </>
+    <div className="landing">
+      <div className="scroll-progress" aria-hidden="true" />
+      <nav className="site-nav">
+        <div className="nav-inner">
+          <a className="brand" href="#top" aria-label="Hivemind Intelligence home">
+            <HivemindMark />
+            <span>
+              <strong>HIVEMIND</strong>
+              <small>INTELLIGENCE</small>
+            </span>
+          </a>
+          <BookingLink className="nav-button">Book the audit</BookingLink>
+        </div>
+      </nav>
+
+      <main>
+        <header className="hero" id="top">
+          <HeroField />
+          <div className="hero-shade" aria-hidden="true" />
+          <div className="site-wrap hero-inner">
+            <div className="hero-copy">
+              <span className="eyebrow">For 1–10 person licensed practices</span>
+              <h1>
+                Use AI on client work{" "}
+                <em>without risking your practice on it.</em>
+              </h1>
+              <p>
+                Hivemind installs private AI infrastructure inside law and
+                medical practices. Your documents, your hardware, your office.
+                Core client-work workflows can run locally without sending
+                document content to consumer AI services.
+              </p>
+              <div className="button-row">
+                <BookingLink className="button button-primary">
+                  Book the audit
+                </BookingLink>
+                <a
+                  className="button button-ghost"
+                  href="#scorecard"
+                  onClick={() => emitAnalytics("scorecard_start")}
+                >
+                  Check your AI exposure
+                </a>
+              </div>
+            </div>
+            <NodeStatus />
+          </div>
+        </header>
+
+        <TrustStrip />
+
+        <section className="dark-section problem-section">
+          <div className="circuit-pattern" aria-hidden="true" />
+          <div className="site-wrap">
+            <span className="eyebrow" data-reveal>The problem</span>
+            <h2 data-reveal>The ban and the breach are the same problem.</h2>
+            <p className="section-intro" data-reveal>
+              Every licensed practice has picked one of two bad options with
+              AI. Neither of them is safety.
+            </p>
+            <div className="two-column">
+              <article className="dark-panel" data-reveal>
+                <span className="panel-label">Practice A banned it</span>
+                <p>
+                  No AI touches client work. The owner still does document
+                  assembly, intake, and follow-up by hand—at a $300 an hour
+                  opportunity cost while competitors move faster.
+                </p>
+              </article>
+              <article className="dark-panel" data-reveal>
+                <span className="panel-label">Practice B ignored it</span>
+                <p>
+                  No policy, no visibility. Staff quietly paste privileged files
+                  and patient information into consumer AI tools, creating
+                  avoidable retention and confidentiality risk.
+                </p>
+              </article>
+            </div>
+            <blockquote data-reveal>
+              Different symptoms. One disease: no sanctioned path. Make the safe
+              way the easy way.
+            </blockquote>
+          </div>
+        </section>
+
+        <section>
+          <div className="site-wrap narrow align-left">
+            <span className="eyebrow" data-reveal>What changed</span>
+            <h2 data-reveal>AI no longer requires the cloud.</h2>
+            <p data-reveal>
+              Modern local models can handle practical workflows such as
+              document drafting, intake summarization, internal search, and
+              follow-up assistance on hardware inside your office.
+            </p>
+            <p data-reveal>
+              <strong>
+                The problem was never AI. The problem was where your data had to
+                go to use it.
+              </strong>{" "}
+              Properly configured on-premise systems can sharply reduce
+              third-party exposure because processing stays on hardware your
+              practice controls.
+            </p>
+          </div>
+        </section>
+
+        <section className="muted-section" id="how">
+          <div className="site-wrap">
+            <span className="eyebrow" data-reveal>How it works</span>
+            <h2 data-reveal>Three steps. Always in this order.</h2>
+            <div className="three-column steps">
+              {[
+                [
+                  "01",
+                  "Audit",
+                  "Map where admin hours leak and exposure hides. Written findings arrive in one week, whether or not you hire Hivemind afterward.",
+                  "$797",
+                  "Fixed fee. Standalone value.",
+                ],
+                [
+                  "02",
+                  "Install",
+                  "Hardware in your office, private models, your top workflows, a written AI usage policy, and staff training.",
+                  "From $4,000",
+                  "Fixed scope. Live in weeks.",
+                ],
+                [
+                  "03",
+                  "Manage",
+                  "Monitoring, hardware refresh, model updates, and one new workflow every quarter. The system improves while your data stays home.",
+                  "From $1,500/mo",
+                  "Monthly. Cancel anytime.",
+                ],
+              ].map(([number, title, copy, price, note]) => (
+                <article className="step" data-reveal key={number}>
+                  <span className="step-number">STEP {number}</span>
+                  <h3>{title}</h3>
+                  <p>{copy}</p>
+                  <strong>{price}</strong>
+                  <small>{note}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="audit-section">
+          <div className="site-wrap split-layout">
+            <div>
+              <span className="eyebrow" data-reveal>
+                What the $797 audit delivers
+              </span>
+              <h2 data-reveal>
+                A written decision document, not a sales conversation.
+              </h2>
+              <p data-reveal>
+                Within one week, receive a prioritized map of where AI can save
+                time, where sensitive information may be exposed, and which
+                controls should come first.
+              </p>
+              <ul className="check-list" data-reveal>
+                <li>Current-state AI and cloud-tool exposure map</li>
+                <li>Workflow opportunities ranked by value and difficulty</li>
+                <li>Recommended safeguards, owners, and next actions</li>
+                <li>A clear install recommendation—even if it is “not yet”</li>
+              </ul>
+            </div>
+            <div className="audit-sheet" data-reveal>
+              <div className="audit-head">
+                <strong>AI Practice Audit</strong>
+                <span>Sample excerpt</span>
+              </div>
+              {[
+                [
+                  "Finding 01",
+                  "Unapproved consumer AI use is possible, but ownership and review procedures are not documented.",
+                ],
+                [
+                  "Opportunity",
+                  "Local drafting with required human review can reduce repetitive work without authorizing autonomous sends.",
+                ],
+                [
+                  "First control",
+                  "Publish an approved-tools policy and route external communication through draft → review → approve → send.",
+                ],
+                [
+                  "Decision",
+                  "Pilot one bounded workflow before expanding access or connecting more data sources.",
+                ],
+              ].map(([label, copy], index) => (
+                <div className="audit-row" key={label}>
+                  <strong>{label}</strong>
+                  <div>
+                    {index === 0 && <span className="risk-pill">Priority: High</span>}
+                    <p>{copy}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="site-wrap split-layout demo-layout">
+            <div>
+              <span className="eyebrow" data-reveal>The proof</span>
+              <h2 data-reveal>
+                I do not ask you to trust me. I unplug the internet.
+              </h2>
+              <p data-reveal>
+                Hivemind brings the machine to your conference room, pulls the
+                network cable, and processes a sample document in front of you.
+                You watch AI work while knowing—not hoping—that the data went
+                nowhere.
+              </p>
+              <p className="compliance-note" data-reveal>
+                Designed for practices governed by HIPAA and professional
+                confidentiality duties. Final compliance depends on
+                configuration, access controls, policies, staff behavior, and
+                connected tools.
+              </p>
+            </div>
+            <OfflineDemo />
+          </div>
+        </section>
+
+        <section className="controls-section">
+          <div className="site-wrap">
+            <span className="eyebrow" data-reveal>How risk is controlled</span>
+            <h2 data-reveal>
+              Privacy, security, and compliance are different jobs.
+            </h2>
+            <div className="three-column controls-grid">
+              {[
+                [
+                  "Privacy",
+                  "Defines where documents are stored, where models process them, and which outside services receive data.",
+                ],
+                [
+                  "Security",
+                  "Uses access controls, encryption, backups, logging, patching, and recovery procedures.",
+                ],
+                [
+                  "Compliance",
+                  "Connects technology to written policies, workforce training, approvals, documentation, and professional duties.",
+                ],
+              ].map(([title, copy]) => (
+                <article className="control" data-reveal key={title}>
+                  <h3>{title}</h3>
+                  <p>{copy}</p>
+                </article>
+              ))}
+            </div>
+            <div className="approval-flow" data-reveal>
+              {[
+                ["01 · Draft", "AI prepares a bounded first draft."],
+                ["02 · Review", "A qualified person checks facts and context."],
+                ["03 · Approve", "An authorized user accepts or edits it."],
+                ["04 · Send", "The human—not the model—releases it."],
+              ].map(([title, copy]) => (
+                <div className="approval-step" key={title}>
+                  <strong>{title}</strong>
+                  <span>{copy}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="site-wrap">
+            <span className="eyebrow" data-reveal>Who this is for</span>
+            <h2 data-reveal>You will know in three lines if we should talk.</h2>
+            <ul className="fit-list">
+              {[
+                [
+                  "You run a licensed practice with 1 to 10 people.",
+                  "Attorney, physician, dentist, therapist, or another profession governed by a board or bar.",
+                ],
+                [
+                  "Admin is eating your billable hours.",
+                  "You are doing $50-an-hour work at your $300-an-hour rate because there is nobody to hand it to.",
+                ],
+                [
+                  "You stayed off AI because of the risk—or suspect your staff did not.",
+                  "Both count. Both are fixable with the same infrastructure.",
+                ],
+              ].map(([title, copy]) => (
+                <li data-reveal key={title}>
+                  <strong>{title}</strong>
+                  <span>{copy}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="not-fit" data-reveal>
+              <strong>Not the right fit if</strong>
+              <p>
+                You want a website chatbot, are comfortable putting client data
+                in the cloud, or are looking for the cheapest option. This is
+                owned infrastructure for practices that treat client data like
+                the liability it is.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="dark-section proof-section">
+          <div className="circuit-pattern" aria-hidden="true" />
+          <div className="site-wrap">
+            <span className="eyebrow" data-reveal>Proof</span>
+            <h2 data-reveal>No rented logos. No purchased reviews.</h2>
+            <p className="section-intro" data-reveal>
+              Hivemind is early. Real demonstrations are more useful than fake
+              social proof.
+            </p>
+            <div className="three-column proof-grid">
+              {[
+                [
+                  "Client Zero: my own practice",
+                  "Every workflow is first tested in Kevin’s own operating environment, with human approval on every send.",
+                  "workflows live: 6\nhuman approval: every send\ncloud egress: 0 bytes",
+                ],
+                [
+                  "The live demo",
+                  "The machine comes to your office and the internet is unplugged in front of you. The proof is something you watch.",
+                  "format: in person\nduration: 30 minutes\ntrust required: none",
+                ],
+                [
+                  "Founding practices",
+                  "A limited cohort receives the full build and a direct line to Kevin at founding pricing in exchange for a named reference.",
+                  "cohort: limited\npricing: founding\nyour role: named reference",
+                ],
+              ].map(([title, copy, stats]) => (
+                <article className="proof-card" data-reveal key={title}>
+                  <h3>{title}</h3>
+                  <p>{copy}</p>
+                  <pre>{stats}</pre>
+                </article>
+              ))}
+            </div>
+            <blockquote data-reveal>
+              When testimonials appear here, they will have full names and
+              practices attached. If they do not, do not trust them.
+            </blockquote>
+          </div>
+        </section>
+
+        <section>
+          <div className="site-wrap founder-layout">
+            <figure className="founder-portrait" data-reveal>
+              <img
+                src="/kevin-miller.jpg"
+                alt="Kevin Miller, founder of Hivemind Intelligence"
+                width="640"
+                height="800"
+                loading="lazy"
+              />
+            </figure>
+            <div>
+              <span className="eyebrow" data-reveal>Who is behind this</span>
+              <h2 data-reveal>I built it for my own practice first.</h2>
+              <p data-reveal>
+                I am Kevin Miller—a credentialed health practitioner who ran a
+                high-ticket coaching practice for over a decade. Client records,
+                scope-of-practice rules, and professional liability are my daily
+                reality.
+              </p>
+              <p data-reveal>
+                When AI arrived, I could not paste client information into a
+                consumer tool and hope. <strong>So I built the alternative:</strong>{" "}
+                local hardware, private models, and a human hand on every send.
+              </p>
+              <p className="credentials" data-reveal>
+                MS · CSCS · NBC-HWC · 10+ years in practice · Coral Gables, FL
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="muted-section faq-section">
+          <div className="site-wrap narrow align-left">
+            <span className="eyebrow" data-reveal>Common questions</span>
+            <h2 data-reveal>Before you book.</h2>
+            <div className="faq-list" data-reveal>
+              {faqItems.map(([question, answer]) => (
+                <details key={question}>
+                  <summary>{question}</summary>
+                  <p>{answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="dark-section final-section" id="book">
+          <div className="site-wrap narrow">
+            <span className="eyebrow" data-reveal>Next step</span>
+            <h2 data-reveal>Find out where you stand.</h2>
+            <p data-reveal>
+              The audit takes one week and produces written findings you keep:
+              where your hours leak, where your exposure hides, and what to
+              automate first.
+            </p>
+            <p className="pricing-line" data-reveal>
+              AI Practice Audit: $797 flat · Installations $4,000–$30,000 by
+              scope · Management from $1,500/mo
+            </p>
+            <BookingLink className="button button-primary">
+              Book the audit
+            </BookingLink>
+            <p className="honesty" data-reveal>
+              If the math does not justify hiring me, I will tell you in writing.
+            </p>
+          </div>
+        </section>
+
+        <Scorecard />
+      </main>
+
+      <footer>
+        <div className="site-wrap footer-inner">
+          <span>© 2026 Hivemind Intelligence · Coral Gables, Florida</span>
+          <span>
+            <a href="mailto:kevin@hivemindintelligence.com">
+              kevin@hivemindintelligence.com
+            </a>
+            <span aria-hidden="true"> · </span>
+            <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
+              LinkedIn
+            </a>
+          </span>
+        </div>
+      </footer>
+    </div>
   );
 }
