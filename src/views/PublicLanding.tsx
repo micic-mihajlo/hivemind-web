@@ -518,7 +518,12 @@ function Scorecard() {
   const [copyStatus, setCopyStatus] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
   const complete = Object.keys(answers).length === quizQuestions.length;
-  const score = Object.values(answers).reduce((sum, value) => sum + value, 0);
+  const score = Object.entries(answers).reduce(
+    (sum, [questionIndex, optionIndex]) =>
+      sum +
+      (quizQuestions[Number(questionIndex)]?.options[optionIndex]?.[1] ?? 0),
+    0,
+  );
   const tier = useMemo(
     () => scoreTiers.find((item) => score <= item.max) ?? scoreTiers[2],
     [score],
@@ -588,8 +593,8 @@ function Scorecard() {
                   {item.question}
                 </legend>
                 <div className="options">
-                  {item.options.map(([label, value]) => {
-                    const selected = answers[questionIndex] === value;
+                  {item.options.map(([label], optionIndex) => {
+                    const selected = answers[questionIndex] === optionIndex;
                     return (
                       <button
                         className="option"
@@ -600,7 +605,7 @@ function Scorecard() {
                         onClick={() =>
                           setAnswers((current) => ({
                             ...current,
-                            [questionIndex]: value,
+                            [questionIndex]: optionIndex,
                           }))
                         }
                       >
@@ -1055,10 +1060,10 @@ export function PublicLanding() {
           <div className="site-wrap founder-layout">
             <figure className="founder-portrait" data-reveal>
               <img
-                src="/kevin-miller.jpg"
+                src="/kevin-miller-retouched-v2.jpg"
                 alt="Kevin Miller, founder of Hivemind Intelligence"
-                width="640"
-                height="800"
+                width="1149"
+                height="1280"
                 loading="lazy"
               />
             </figure>
