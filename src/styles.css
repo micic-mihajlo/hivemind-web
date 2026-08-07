@@ -208,14 +208,14 @@ summary:active {
 
 .hero-field {
   z-index: -2;
-  opacity: 0.96;
+  opacity: 1;
 }
 
 .hero-shade {
   z-index: -1;
   background:
-    linear-gradient(90deg, rgba(13, 25, 36, 0.42), transparent 54%),
-    radial-gradient(circle at 80% 15%, rgba(34, 56, 74, 0.2), transparent 44%);
+    linear-gradient(90deg, rgba(13, 25, 36, 0.3), transparent 54%),
+    radial-gradient(circle at 80% 15%, rgba(34, 56, 74, 0.12), transparent 44%);
 }
 
 .hero-inner {

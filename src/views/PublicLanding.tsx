@@ -237,7 +237,7 @@ function HeroField() {
 
         vec3 color = ink;
         color += blue * q.y * .32 * contain;
-        color += brass * filament * .36 * contain * (.55 + .45 * q.x);
+        color += brass * filament * .38 * contain * (.55 + .45 * q.x);
         color += brass * lineGlow;
         color *= 1. - .35 * length(uv * vec2(.7, 1.1));
         color += (h(gl_FragCoord.xy + T) - .5) * .018;
