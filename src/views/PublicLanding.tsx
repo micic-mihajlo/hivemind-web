@@ -232,12 +232,12 @@ function HeroField() {
           * (.28 + .22 * sin(vx * 22. - T * .9));
 
         vec3 ink = vec3(.055, .09, .125);
-        vec3 brass = vec3(.72, .56, .31);
+        vec3 brass = vec3(.78, .60, .33);
         vec3 blue = vec3(.16, .26, .38);
 
         vec3 color = ink;
         color += blue * q.y * .32 * contain;
-        color += brass * filament * .38 * contain * (.55 + .45 * q.x);
+        color += brass * filament * .50 * contain * (.55 + .45 * q.x);
         color += brass * lineGlow;
         color *= 1. - .35 * length(uv * vec2(.7, 1.1));
         color += (h(gl_FragCoord.xy + T) - .5) * .018;
