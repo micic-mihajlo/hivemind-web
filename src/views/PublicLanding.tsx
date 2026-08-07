@@ -135,23 +135,6 @@ function useLandingEffects() {
   }, []);
 }
 
-function HivemindMark() {
-  return (
-    <svg
-      className="brand-mark"
-      viewBox="0 0 100 100"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path d="M50 4 90 27v46L50 96 10 73V27Z" />
-      <path d="M32 30v40m0-20h36M68 30v40M50 30v40" />
-      {[34, 45, 56, 67].map((cy) => (
-        <circle key={cy} cx="50" cy={cy} r="2.4" />
-      ))}
-    </svg>
-  );
-}
-
 function BookingLink({
   children,
   className,
@@ -182,85 +165,174 @@ function HeroField() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    if (window.matchMedia("(max-width: 600px)").matches) {
+      canvas.dataset.fieldMode = "fallback";
+      return;
+    }
+    const gl = canvas.getContext("webgl2", {
+      antialias: false,
+      alpha: true,
+    });
+    if (!gl) {
+      canvas.dataset.fieldMode = "fallback";
+      return;
+    }
+    canvas.dataset.fieldMode = "webgl";
 
+    const vertexSource = `#version 300 es
+      in vec2 p;
+      void main(){ gl_Position = vec4(p, 0., 1.); }
+    `;
+
+    const fragmentSource = `#version 300 es
+      precision highp float;
+      uniform vec2 R;
+      uniform float T;
+      uniform vec2 M;
+      out vec4 O;
+
+      float h(vec2 p){
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      float n(vec2 p){
+        vec2 i = floor(p), f = fract(p);
+        f = f * f * (3. - 2. * f);
+        return mix(
+          mix(h(i), h(i + vec2(1, 0)), f.x),
+          mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x),
+          f.y
+        );
+      }
+
+      float fbm(vec2 p){
+        float v = 0., a = .5;
+        for(int i = 0; i < 5; i++){
+          v += a * n(p);
+          p = p * 2.03 + vec2(1.7, 9.2);
+          a *= .5;
+        }
+        return v;
+      }
+
+      void main(){
+        vec2 uv = (gl_FragCoord.xy - .5 * R) / R.y;
+        float vy = gl_FragCoord.y / R.y;
+        float vx = gl_FragCoord.x / R.x;
+        float t = T * .045;
+        vec2 drift = (M - .5) * .22;
+
+        vec2 q = vec2(fbm(uv * 1.5 + t + drift), fbm(uv * 1.5 - t * .6));
+        float f = fbm(uv * 2.1 + q * 1.5);
+        float filament = pow(1. - abs(sin(f * 6.2831 + t * 2.)), 10.);
+
+        float boundary = .085;
+        float contain = smoothstep(boundary, boundary + .16, vy);
+        float lineGlow = exp(-abs(vy - boundary) * 90.)
+          * (.28 + .22 * sin(vx * 22. - T * .9));
+
+        vec3 ink = vec3(.055, .09, .125);
+        vec3 brass = vec3(.72, .56, .31);
+        vec3 blue = vec3(.16, .26, .38);
+
+        vec3 color = ink;
+        color += blue * q.y * .32 * contain;
+        color += brass * filament * .36 * contain * (.55 + .45 * q.x);
+        color += brass * lineGlow;
+        color *= 1. - .35 * length(uv * vec2(.7, 1.1));
+        color += (h(gl_FragCoord.xy + T) - .5) * .018;
+
+        O = vec4(color, 1.);
+      }
+    `;
+
+    const compileShader = (type: number, source: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.warn(gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    };
+
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSource);
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentSource);
+    if (!vertexShader || !fragmentShader) return;
+
+    const program = gl.createProgram();
+    const buffer = gl.createBuffer();
+    if (!program || !buffer) return;
+
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.warn(gl.getProgramInfoLog(program));
+      return;
+    }
+    gl.useProgram(program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 3, -1, -1, 3]),
+      gl.STATIC_DRAW,
+    );
+
+    const position = gl.getAttribLocation(program, "p");
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+    const resolution = gl.getUniformLocation(program, "R");
+    const time = gl.getUniformLocation(program, "T");
+    const pointer = gl.getUniformLocation(program, "M");
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
     const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     let frame = 0;
-    let width = 0;
-    let height = 0;
-    let pointerX = 0.72;
-    let pointerY = 0.28;
-    const particles = Array.from({ length: 42 }, (_, index) => ({
-      seed: index * 31.17,
-      x: Math.random(),
-      y: 0.13 + Math.random() * 0.78,
-      speed: 0.000035 + Math.random() * 0.000045,
-      radius: 0.6 + Math.random() * 1.25,
-    }));
+    let visible = true;
+    let pointerX = 0.5;
+    let pointerY = 0.5;
+    let smoothX = 0.5;
+    let smoothY = 0.5;
+    const startedAt = performance.now();
 
     const resize = () => {
-      const rect = canvas.getBoundingClientRect();
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (!rect) return;
       const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-      width = rect.width;
-      height = rect.height;
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      canvas.width = Math.round(rect.width * ratio);
+      canvas.height = Math.round(rect.height * ratio);
+      gl.viewport(0, 0, canvas.width, canvas.height);
     };
 
-    const draw = (time: number) => {
-      context.clearRect(0, 0, width, height);
-      const glow = context.createRadialGradient(
-        pointerX * width,
-        pointerY * height,
-        0,
-        pointerX * width,
-        pointerY * height,
-        Math.max(width, height) * 0.65,
-      );
-      glow.addColorStop(0, "rgba(195,154,91,.12)");
-      glow.addColorStop(0.46, "rgba(34,56,74,.22)");
-      glow.addColorStop(1, "rgba(13,25,36,0)");
-      context.fillStyle = glow;
-      context.fillRect(0, 0, width, height);
-
-      const boundary = height * 0.88;
-      const line = context.createLinearGradient(0, 0, width, 0);
-      line.addColorStop(0, "rgba(166,124,66,0)");
-      line.addColorStop(0.5, "rgba(195,154,91,.5)");
-      line.addColorStop(1, "rgba(166,124,66,0)");
-      context.strokeStyle = line;
-      context.lineWidth = 1;
-      context.beginPath();
-      context.moveTo(0, boundary);
-      context.lineTo(width, boundary);
-      context.stroke();
-
-      for (const particle of particles) {
-        const travel = reducedMotion ? 0 : time * particle.speed;
-        const x = ((particle.x + travel) % 1.12) * width;
-        const wave =
-          Math.sin(time * 0.00022 + particle.seed) * height * 0.035;
-        const y = Math.min(particle.y * height + wave, boundary - 8);
-        context.fillStyle = `rgba(195,154,91,${0.16 + particle.radius * 0.12})`;
-        context.beginPath();
-        context.arc(x, y, particle.radius, 0, Math.PI * 2);
-        context.fill();
+    const draw = (now: number) => {
+      if (visible && !document.hidden) {
+        smoothX += (pointerX - smoothX) * 0.04;
+        smoothY += (pointerY - smoothY) * 0.04;
+        gl.uniform2f(resolution, canvas.width, canvas.height);
+        gl.uniform1f(time, (now - startedAt) / 1000);
+        gl.uniform2f(pointer, smoothX, smoothY);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
-
       if (!reducedMotion) frame = requestAnimationFrame(draw);
     };
 
     const onPointerMove = (event: PointerEvent) => {
-      pointerX += (event.clientX / window.innerWidth - pointerX) * 0.18;
-      pointerY += (event.clientY / window.innerHeight - pointerY) * 0.18;
+      pointerX = event.clientX / window.innerWidth;
+      pointerY = 1 - event.clientY / window.innerHeight;
     };
 
+    const visibilityObserver = new IntersectionObserver((entries) => {
+      visible = entries[0]?.isIntersecting ?? true;
+    });
+
     resize();
+    visibilityObserver.observe(canvas);
     frame = requestAnimationFrame(draw);
     window.addEventListener("resize", resize);
     if (!coarsePointer) {
@@ -269,8 +341,13 @@ function HeroField() {
 
     return () => {
       cancelAnimationFrame(frame);
+      visibilityObserver.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);
+      gl.deleteBuffer(buffer);
+      gl.deleteProgram(program);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
     };
   }, []);
 
@@ -566,11 +643,13 @@ export function PublicLanding() {
       <nav className="site-nav">
         <div className="nav-inner">
           <a className="brand" href="#top" aria-label="Hivemind Intelligence home">
-            <HivemindMark />
-            <span>
-              <strong>HIVEMIND</strong>
-              <small>INTELLIGENCE</small>
-            </span>
+            <img
+              className="brand-logo"
+              src="/brand/hivemind-horizontal-dark.svg"
+              alt=""
+              width="561"
+              height="164"
+            />
           </a>
           <BookingLink className="nav-button">Book the audit</BookingLink>
         </div>
@@ -677,7 +756,7 @@ export function PublicLanding() {
                   "01",
                   "Audit",
                   "Map where admin hours leak and exposure hides. Written findings arrive in one week, whether or not you hire Hivemind afterward.",
-                  "$797",
+                  "$1,500",
                   "Fixed fee. Standalone value.",
                 ],
                 [
@@ -691,7 +770,7 @@ export function PublicLanding() {
                   "03",
                   "Manage",
                   "Monitoring, hardware refresh, model updates, and one new workflow every quarter. The system improves while your data stays home.",
-                  "From $1,500/mo",
+                  "From $2,000/mo",
                   "Monthly. Cancel anytime.",
                 ],
               ].map(([number, title, copy, price, note]) => (
@@ -711,7 +790,7 @@ export function PublicLanding() {
           <div className="site-wrap split-layout">
             <div>
               <span className="eyebrow" data-reveal>
-                What the $797 audit delivers
+                What the $1,500 audit delivers
               </span>
               <h2 data-reveal>
                 A written decision document, not a sales conversation.
@@ -965,8 +1044,8 @@ export function PublicLanding() {
               automate first.
             </p>
             <p className="pricing-line" data-reveal>
-              AI Practice Audit: $797 flat · Installations $4,000–$30,000 by
-              scope · Management from $1,500/mo
+              AI Practice Audit: $1,500 flat · Installations $4,000–$30,000 by
+              scope · Management from $2,000/mo
             </p>
             <BookingLink className="button button-primary">
               Book the audit
