@@ -191,56 +191,120 @@ function HeroField() {
       uniform vec2 M;
       out vec4 O;
 
-      float h(vec2 p){
+      float hash(vec2 p){
         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
       }
 
-      float n(vec2 p){
-        vec2 i = floor(p), f = fract(p);
-        f = f * f * (3. - 2. * f);
-        return mix(
-          mix(h(i), h(i + vec2(1, 0)), f.x),
-          mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x),
-          f.y
-        );
+      float segmentDistance(vec2 p, vec2 a, vec2 b, float aspect){
+        p.x *= aspect;
+        a.x *= aspect;
+        b.x *= aspect;
+        vec2 pa = p - a;
+        vec2 ba = b - a;
+        float projection = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
+        return length(pa - ba * projection);
       }
 
-      float fbm(vec2 p){
-        float v = 0., a = .5;
-        for(int i = 0; i < 5; i++){
-          v += a * n(p);
-          p = p * 2.03 + vec2(1.7, 9.2);
-          a *= .5;
-        }
-        return v;
+      float trace(vec2 p, vec2 a, vec2 b, float aspect){
+        float distanceToTrace = segmentDistance(p, a, b, aspect);
+        float core = smoothstep(.0018, .00035, distanceToTrace);
+        float glow = exp(-distanceToTrace * 240.) * .3;
+        return core + glow;
+      }
+
+      float node(vec2 p, vec2 position, float aspect){
+        float distanceToNode = length((p - position) * vec2(aspect, 1.));
+        float core = smoothstep(.0055, .0026, distanceToNode);
+        float halo = exp(-distanceToNode * 125.) * .65;
+        return core + halo;
+      }
+
+      float signal(vec2 p, vec2 a, vec2 b, float phase, float aspect){
+        float progress = fract(T * .095 + phase);
+        vec2 position = mix(a, b, smoothstep(0., 1., progress));
+        float distanceToSignal = length((p - position) * vec2(aspect, 1.));
+        return exp(-distanceToSignal * 310.);
       }
 
       void main(){
-        vec2 uv = (gl_FragCoord.xy - .5 * R) / R.y;
+        vec2 p = gl_FragCoord.xy / R;
+        float aspect = R.x / R.y;
         float vy = gl_FragCoord.y / R.y;
         float vx = gl_FragCoord.x / R.x;
-        float t = T * .045;
-        vec2 drift = (M - .5) * .22;
+        p += (M - .5) * .004;
 
-        vec2 q = vec2(fbm(uv * 1.5 + t + drift), fbm(uv * 1.5 - t * .6));
-        float f = fbm(uv * 2.1 + q * 1.5);
-        float filament = pow(1. - abs(sin(f * 6.2831 + t * 2.)), 10.);
+        float traces = 0.;
+        traces += trace(p, vec2(0., .82), vec2(.10, .82), aspect);
+        traces += trace(p, vec2(.10, .82), vec2(.10, .72), aspect);
+        traces += trace(p, vec2(.10, .72), vec2(.30, .72), aspect);
+        traces += trace(p, vec2(.30, .72), vec2(.30, .64), aspect);
+        traces += trace(p, vec2(.30, .64), vec2(.41, .64), aspect);
+
+        traces += trace(p, vec2(0., .53), vec2(.07, .53), aspect);
+        traces += trace(p, vec2(.07, .53), vec2(.07, .45), aspect);
+        traces += trace(p, vec2(.07, .45), vec2(.24, .45), aspect);
+        traces += trace(p, vec2(.24, .45), vec2(.24, .37), aspect);
+        traces += trace(p, vec2(.24, .37), vec2(.39, .37), aspect);
+
+        traces += trace(p, vec2(0., .17), vec2(.15, .17), aspect);
+        traces += trace(p, vec2(.15, .17), vec2(.15, .26), aspect);
+        traces += trace(p, vec2(.15, .26), vec2(.34, .26), aspect);
+
+        traces += trace(p, vec2(1., .88), vec2(.90, .88), aspect);
+        traces += trace(p, vec2(.90, .88), vec2(.90, .77), aspect);
+        traces += trace(p, vec2(.90, .77), vec2(.82, .77), aspect);
+
+        traces += trace(p, vec2(1., .57), vec2(.92, .57), aspect);
+        traces += trace(p, vec2(.92, .57), vec2(.92, .64), aspect);
+        traces += trace(p, vec2(.92, .64), vec2(.84, .64), aspect);
+
+        traces += trace(p, vec2(1., .25), vec2(.91, .25), aspect);
+        traces += trace(p, vec2(.91, .25), vec2(.91, .35), aspect);
+        traces += trace(p, vec2(.91, .35), vec2(.81, .35), aspect);
+
+        traces += trace(p, vec2(.48, 1.), vec2(.48, .91), aspect);
+        traces += trace(p, vec2(.48, .91), vec2(.57, .91), aspect);
+        traces += trace(p, vec2(.67, 1.), vec2(.67, .91), aspect);
+        traces += trace(p, vec2(.67, .91), vec2(.77, .91), aspect);
+        traces += trace(p, vec2(.53, 0.), vec2(.53, .08), aspect);
+        traces += trace(p, vec2(.53, .08), vec2(.63, .08), aspect);
+        traces += trace(p, vec2(.74, 0.), vec2(.74, .11), aspect);
+        traces += trace(p, vec2(.74, .11), vec2(.84, .11), aspect);
+
+        float nodes = 0.;
+        nodes += node(p, vec2(.41, .64), aspect);
+        nodes += node(p, vec2(.39, .37), aspect);
+        nodes += node(p, vec2(.34, .26), aspect);
+        nodes += node(p, vec2(.82, .77), aspect);
+        nodes += node(p, vec2(.84, .64), aspect);
+        nodes += node(p, vec2(.81, .35), aspect);
+        nodes += node(p, vec2(.57, .91), aspect);
+        nodes += node(p, vec2(.63, .08), aspect);
+
+        float pulses = 0.;
+        pulses += signal(p, vec2(.10, .72), vec2(.30, .72), .05, aspect);
+        pulses += signal(p, vec2(.07, .45), vec2(.24, .45), .42, aspect);
+        pulses += signal(p, vec2(.91, .35), vec2(.81, .35), .72, aspect);
+        pulses += signal(p, vec2(.90, .77), vec2(.82, .77), .25, aspect);
+        pulses += signal(p, vec2(.48, .91), vec2(.57, .91), .58, aspect);
 
         float boundary = .085;
         float contain = smoothstep(boundary, boundary + .16, vy);
         float lineGlow = exp(-abs(vy - boundary) * 90.)
           * (.28 + .22 * sin(vx * 22. - T * .9));
 
-        vec3 ink = vec3(.055, .09, .125);
-        vec3 brass = vec3(.78, .60, .33);
-        vec3 blue = vec3(.16, .26, .38);
+        vec3 ink = vec3(.045, .078, .108);
+        vec3 brass = vec3(.78, .58, .30);
+        vec3 blue = vec3(.13, .23, .34);
 
         vec3 color = ink;
-        color += blue * q.y * .32 * contain;
-        color += brass * filament * .50 * contain * (.55 + .45 * q.x);
+        color += blue * (.08 + .12 * (1. - distance(p, vec2(.62, .52))));
+        color += brass * min(traces, 1.4) * .24 * contain;
+        color += brass * nodes * .52 * contain;
+        color += brass * pulses * 1.15 * contain;
         color += brass * lineGlow;
-        color *= 1. - .35 * length(uv * vec2(.7, 1.1));
-        color += (h(gl_FragCoord.xy + T) - .5) * .018;
+        color *= .94 + .06 * smoothstep(0., .7, 1. - distance(p, vec2(.5)));
+        color += (hash(gl_FragCoord.xy + T) - .5) * .012;
 
         O = vec4(color, 1.);
       }
