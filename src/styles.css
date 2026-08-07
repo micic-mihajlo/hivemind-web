@@ -6,24 +6,24 @@
 
 :root {
   --ink: #0d1924;
-  --ink-raised: #172735;
+  --ink-raised: #22384a;
   --ink-panel: #1b2a38;
   --paper: #f7f4ed;
-  --paper-muted: #eee9df;
+  --paper-muted: #efe9dd;
   --paper-raised: #fbfaf6;
   --body: #4d5a66;
   --mist: #aab6c2;
-  --fog: #d2dae1;
+  --fog: #c8d2dc;
   --brass: #a67c42;
   --brass-bright: #c39a5b;
-  --brass-text: #78572b;
-  --line: #d9d1c3;
-  --line-dark: #304151;
-  --good: #64ad83;
-  --display: Georgia, "Times New Roman", serif;
-  --system: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --brass-text: #7d5c2f;
+  --line: #ddd6c8;
+  --line-dark: #2c3d4f;
+  --good: #4d9270;
+  --display: "Libre Caslon Text", Georgia, serif;
+  --system: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --mono: "IBM Plex Mono", "Courier New", monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   color: var(--ink);
@@ -125,9 +125,7 @@ canvas {
   top: 0;
   z-index: 50;
   color: var(--paper);
-  background: rgba(13, 25, 36, 0.82);
-  -webkit-backdrop-filter: blur(24px) saturate(135%);
-  backdrop-filter: blur(24px) saturate(135%);
+  background: #010a13;
   box-shadow: 0 1px rgba(255, 255, 255, 0.06);
 }
 
@@ -154,51 +152,16 @@ canvas {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
   min-width: 0;
   color: inherit;
   text-decoration: none;
 }
 
-.brand-mark {
-  width: 2.125rem;
-  height: 2.125rem;
+.brand-logo {
+  display: block;
+  width: 9.5rem;
+  height: auto;
   flex: none;
-}
-
-.brand-mark path:first-child {
-  stroke: var(--brass-bright);
-  stroke-width: 3;
-}
-
-.brand-mark path:nth-child(2) {
-  stroke: var(--brass-bright);
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-
-.brand-mark circle {
-  fill: var(--brass-bright);
-}
-
-.brand > span {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-
-.brand strong {
-  font-family: var(--display);
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-}
-
-.brand small {
-  margin-top: 0.3rem;
-  color: var(--brass-bright);
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.2em;
 }
 
 .nav-button {
@@ -245,13 +208,14 @@ summary:active {
 
 .hero-field {
   z-index: -2;
+  opacity: 1;
 }
 
 .hero-shade {
   z-index: -1;
   background:
-    linear-gradient(90deg, rgba(13, 25, 36, 0.38), transparent 50%),
-    radial-gradient(circle at 80% 15%, rgba(34, 56, 74, 0.4), transparent 42%);
+    linear-gradient(90deg, rgba(13, 25, 36, 0.3), transparent 54%),
+    radial-gradient(circle at 80% 15%, rgba(34, 56, 74, 0.12), transparent 44%);
 }
 
 .hero-inner {
@@ -301,9 +265,9 @@ h3 {
 h1 {
   max-width: 15ch;
   margin-bottom: 1.5rem;
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  line-height: 1.055;
-  letter-spacing: -0.035em;
+  font-size: clamp(2.25rem, 4.8vw, 3.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
 }
 
 h1 em {
@@ -314,9 +278,9 @@ h1 em {
 h2 {
   max-width: 24ch;
   margin-bottom: 1.25rem;
-  font-size: clamp(2rem, 3.8vw, 3rem);
-  line-height: 1.1;
-  letter-spacing: -0.027em;
+  font-size: clamp(1.75rem, 3.5vw, 2.625rem);
+  line-height: 1.18;
+  letter-spacing: 0;
 }
 
 h3 {
@@ -1567,22 +1531,8 @@ footer {
     min-height: 3.75rem;
   }
 
-  .brand {
-    gap: 0.55rem;
-  }
-
-  .brand-mark {
-    width: 1.85rem;
-    height: 1.85rem;
-  }
-
-  .brand strong {
-    font-size: 0.88rem;
-  }
-
-  .brand small {
-    font-size: 0.5rem;
-    letter-spacing: 0.16em;
+  .brand-logo {
+    width: 8rem;
   }
 
   .nav-button {
@@ -1608,12 +1558,12 @@ footer {
   }
 
   h1 {
-    font-size: clamp(2.35rem, 11vw, 3.25rem);
-    line-height: 1.02;
+    font-size: 2.25rem;
+    line-height: 1.12;
   }
 
   h2 {
-    font-size: clamp(1.9rem, 9vw, 2.5rem);
+    font-size: 1.75rem;
   }
 
   .hero-copy > p {
@@ -1704,10 +1654,6 @@ footer {
 }
 
 @media (max-width: 390px) {
-  .brand small {
-    display: none;
-  }
-
   .trust-row {
     grid-template-columns: 1fr;
   }
