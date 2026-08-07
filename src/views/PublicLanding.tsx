@@ -1060,10 +1060,10 @@ export function PublicLanding() {
           <div className="site-wrap founder-layout">
             <figure className="founder-portrait" data-reveal>
               <img
-                src="/kevin-miller.jpg"
+                src="/kevin-miller-retouched.jpg"
                 alt="Kevin Miller, founder of Hivemind Intelligence"
-                width="640"
-                height="800"
+                width="1280"
+                height="853"
                 loading="lazy"
               />
             </figure>
