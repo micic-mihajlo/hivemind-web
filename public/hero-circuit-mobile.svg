@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 900" preserveAspectRatio="none" aria-hidden="true">
+  <g fill="none" stroke="#c39a5b" stroke-linecap="square" stroke-linejoin="round">
+    <g stroke-opacity=".34" stroke-width="1.15">
+      <path d="M-24 112H78v58h78"/>
+      <path d="M-24 302h54v-62h94v-48h62"/>
+      <path d="M-24 558h82v52h68v64h78"/>
+      <path d="M414 92H312v64h-56"/>
+      <path d="M414 348h-66v58h-84v54"/>
+      <path d="M414 668h-58v-66h-74v-56h-48"/>
+      <path d="M208 0v64h56v48"/>
+      <path d="M164 900v-52h64v-56h48"/>
+    </g>
+    <g stroke-opacity=".2" stroke-width="3.5">
+      <path d="M-24 112H78v58h78"/>
+      <path d="M-24 558h82v52h68v64h78"/>
+      <path d="M414 348h-66v58h-84v54"/>
+      <path d="M208 0v64h56v48"/>
+    </g>
+  </g>
+  <g fill="#c39a5b">
+    <circle cx="156" cy="170" r="2.4"/>
+    <circle cx="186" cy="192" r="2.1"/>
+    <circle cx="58" cy="610" r="2.4"/>
+    <circle cx="204" cy="674" r="2.2"/>
+    <circle cx="256" cy="156" r="2.3"/>
+    <circle cx="264" cy="460" r="2.5"/>
+    <circle cx="234" cy="546" r="2.2"/>
+    <circle cx="264" cy="112" r="2.1"/>
+    <circle cx="276" cy="792" r="2.3"/>
+  </g>
+  <g fill="#f2d69b" fill-opacity=".78">
+    <circle cx="156" cy="170" r=".85"/>
+    <circle cx="58" cy="610" r=".85"/>
+    <circle cx="264" cy="460" r=".85"/>
+  </g>
+</svg>
