@@ -222,6 +222,12 @@ def main() -> int:
         (content / "terms-of-service.md", out / "terms" / "index.html",
          "Terms of Service | Hivemind Intelligence",
          "The terms governing the Growth Audit plugin for ChatGPT and Codex and Hivemind Intelligence services."),
+        (content / "legal-workflows-privacy-policy.md", out / "privacy" / "legal-workflows" / "index.html",
+         "Legal Workflows Privacy Policy | Hivemind Intelligence",
+         "How Hivemind Intelligence handles data in the Legal Workflows plugin for ChatGPT and Codex."),
+        (content / "legal-workflows-terms-of-service.md", out / "terms" / "legal-workflows" / "index.html",
+         "Legal Workflows Terms of Service | Hivemind Intelligence",
+         "The terms governing the Legal Workflows plugin for ChatGPT and Codex."),
     ]
 
     for md_path, html_path, title, description in pages:
