@@ -1139,6 +1139,12 @@ export function PublicLanding() {
             <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
               LinkedIn
             </a>
+            <span aria-hidden="true"> · </span>
+            <a href="/terms">Terms</a>
+            <span aria-hidden="true"> · </span>
+            <a href="/privacy/growth-audit">Privacy</a>
+            <span aria-hidden="true"> · </span>
+            <a href="/support">Support</a>
           </span>
         </div>
       </footer>
