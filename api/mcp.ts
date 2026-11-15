@@ -6,24 +6,28 @@
  * vault/projects/growth-audit-plugin/src/server.ts). Only the transport
  * wrapper differs.
  *
- * WHY THIS SHAPE (three dead ends, measured, not guessed):
+ * WHY THE IMPORTS ARE DYNAMIC
+ * ----------------------------
+ * A static import that throws at module load kills the whole function with a
+ * bare 500 and no body — which is exactly what happened four times before
+ * this version, and it is why the error was invisible. Loading each stage
+ * inside the handler means a load failure is caught, named, and returned as
+ * JSON, so the next failure tells us WHICH stage broke instead of guessing.
  *
- *   1. The MCP SDK's Node wrapper (StreamableHTTPServerTransport) converts
- *      Node req/res via @hono/node-server and calls `outgoing.writeHead()`.
- *      Vercel's VercelResponse does not implement that path here — the build
- *      succeeded and every request returned a bare 500.
- *   2. The SDK's web-standard transport speaks Request/Response directly, but
- *      exporting `{ fetch }` is an Edge-runtime shape. Vercel's Node runtime
- *      expects a function export, so an object export was invoked as a
- *      handler and every request 500'd before the body was ever read.
- *   3. The vendored server imported the file-backed store, which pulls in
- *      `node:fs`. The serverless path must never touch the filesystem, so the
- *      store was split: store-memory.ts (no fs) and store.ts (fs-backed).
+ * The stages are:
+ *   1. the MCP SDK's web-standard transport
+ *   2. the vendored tool server
+ *   3. the ephemeral (fs-free) store
  *
- * This version keeps the Node-style `(req, res)` export Vercel actually
- * supports, and bridges to the SDK's web-standard transport by hand:
- * build a Request, get a Response back, write it out. No SDK conversion
- * layer, no writeHead, no object export.
+ * WHY THIS TRANSPORT (three dead ends, measured):
+ *   - The SDK's Node wrapper (StreamableHTTPServerTransport) converts Node
+ *     req/res via @hono/node-server and calls `outgoing.writeHead()`, which
+ *     Vercel's VercelResponse does not implement here.
+ *   - Exporting `{ fetch }` is an Edge-runtime shape; Vercel's Node runtime
+ *     expects a function export and invoked the object as a handler.
+ *   - So: keep Vercel's `(req, res)` function export, and bridge to the SDK's
+ *     web-standard transport by hand. Build a Request, get a Response, write
+ *     it out. No SDK conversion layer, no writeHead, no object export.
  *
  * STORAGE POSTURE: a serverless invocation has an ephemeral filesystem, so
  * this mounts the MemoryStore. That store reports `retainsLeads: false`, and
@@ -32,24 +36,62 @@
  * "we'll be in touch" while the record evaporates is worse than no tool.
  */
 
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+type Loaded = {
+  transport: typeof import("@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js").WebStandardStreamableHTTPServerTransport;
+  buildServer: typeof import("../mcp-src/growth-audit/server").buildServer;
+  MemoryStore: typeof import("../mcp-src/growth-audit/store-memory").MemoryStore;
+};
 
-import { buildServer } from "../mcp-src/growth-audit/server";
-import { MemoryStore } from "../mcp-src/growth-audit/store-memory";
+let cached: Loaded | null = null;
+
+async function loadStages(): Promise<Loaded> {
+  if (cached) return cached;
+
+  const stage: string[] = [];
+  try {
+    const sdk = await import("@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js");
+    stage.push("sdk:ok");
+    const srv = await import("../mcp-src/growth-audit/server");
+    stage.push("server:ok");
+    const mem = await import("../mcp-src/growth-audit/store-memory");
+    stage.push("store:ok");
+
+    cached = {
+      transport: sdk.WebStandardStreamableHTTPServerTransport,
+      buildServer: srv.buildServer,
+      MemoryStore: mem.MemoryStore,
+    };
+    return cached;
+  } catch (err) {
+    throw new Error(
+      `load failed after [${stage.join(",") || "none"}]: ` +
+        (err instanceof Error ? err.message : String(err))
+    );
+  }
+}
 
 /** Build an absolute URL from Vercel's request (req.url is a path only). */
-function absoluteUrl(req: VercelRequest): string {
+function absoluteUrl(req: { url?: string; headers: Record<string, unknown> }): string {
   const host = req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost";
   const proto = req.headers["x-forwarded-proto"] ?? "https";
   const path = req.url ?? "/api/mcp";
   return `${proto}://${host}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-async function writeResponse(res: VercelResponse, response: Response): Promise<void> {
+async function writeResponse(
+  res: {
+    statusCode: number;
+    headersSent: boolean;
+    setHeader(k: string, v: unknown): void;
+    getHeader(k: string): unknown;
+    end(b?: unknown): void;
+    status(n: number): unknown;
+    json(b: unknown): void;
+  },
+  response: Response
+): Promise<void> {
   res.statusCode = response.status;
   response.headers.forEach((value, key) => {
-    // Set-Cookie arrives as multiple headers; preserve them all.
     if (key.toLowerCase() === "set-cookie") {
       const existing = res.getHeader("set-cookie");
       const list = Array.isArray(existing) ? existing : existing ? [String(existing)] : [];
@@ -68,30 +110,42 @@ async function writeResponse(res: VercelResponse, response: Response): Promise<v
   res.end(body);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+export default async function handler(
+  req: {
+    method?: string;
+    url?: string;
+    headers: Record<string, unknown>;
+    body?: unknown;
+  },
+  res: {
+    statusCode: number;
+    headersSent: boolean;
+    setHeader(k: string, v: unknown): void;
+    getHeader(k: string): unknown;
+    end(b?: unknown): void;
+    status(n: number): unknown;
+    json(b: unknown): void;
+  }
+): Promise<void> {
   const path = (req.url ?? "").split("?")[0];
 
-  // Liveness probe. If this answers, the module loaded and the function is
-  // running — which isolates a 500 on /api/mcp to the MCP path itself.
   if (path === "/api/healthz") {
     res.status(200).json({
       ok: true,
       service: "growth-audit",
-      capabilities: {
-        durable: false,
-        retainsLeads: false,
-        recordStore: "this session only — nothing is written to disk",
-      },
+      route: "/api/healthz",
     });
     return;
   }
 
   try {
+    const { transport: Transport, buildServer, MemoryStore } = await loadStages();
+
     const store = new MemoryStore();
     await store.init();
 
     const server = buildServer(store, store.capabilities);
-    const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    const transport = new Transport({ sessionIdGenerator: undefined });
 
     const method = req.method ?? "GET";
     const headers = new Headers();
@@ -102,18 +156,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     let body: string | undefined;
     if (method !== "GET" && method !== "HEAD") {
-      if (typeof req.body === "string") {
-        body = req.body;
-      } else if (req.body && typeof req.body === "object") {
-        body = JSON.stringify(req.body);
-      }
+      if (typeof req.body === "string") body = req.body;
+      else if (req.body && typeof req.body === "object") body = JSON.stringify(req.body);
     }
 
-    const request = new Request(absoluteUrl(req), {
-      method,
-      headers,
-      body,
-    });
+    const request = new Request(absoluteUrl(req), { method, headers, body });
 
     await server.connect(transport);
     const response = await transport.handleRequest(request);
@@ -124,6 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       res.status(500).json({
         error: "mcp_request_failed",
         message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? (err.stack ?? "").slice(0, 1200) : undefined,
       });
     }
   }
