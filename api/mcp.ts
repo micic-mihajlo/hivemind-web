@@ -1,12 +1,17 @@
 /**
- * Growth Audit — MCP server over a Vercel Node function.
+ * Growth Audit — MCP server over a Vercel Node function (web-standard export).
  *
  * The tool implementation is vendored under /mcp-src/growth-audit and is the
  * SAME code the self-hosted Express server runs (see
  * vault/projects/growth-audit-plugin/src/server.ts). Only the transport
- * wrapper differs: Vercel gives us Node-style (req, res), the self-hosted
- * server gives us Express, and the MCP SDK's StreamableHTTPServerTransport
- * speaks both.
+ * wrapper differs.
+ *
+ * WHY THE WEB-STANDARD EXPORT: the MCP SDK's Node wrapper converts between
+ * Node's IncomingMessage/ServerResponse and the web-standard Request/Response
+ * using @hono/node-server. That conversion path is what breaks under Vercel's
+ * Node runtime here (the build succeeds and the request 500s). The SDK also
+ * ships a web-standard transport that speaks Request/Response directly, so we
+ * use that and hand Vercel a plain Response. No conversion, no 500.
  *
  * STORAGE POSTURE: a serverless invocation has an ephemeral filesystem, so
  * this mounts the MemoryStore. That store reports `retainsLeads: false`, and
@@ -15,49 +20,49 @@
  * "we'll be in touch" while the record evaporates is worse than no tool.
  */
 
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { WebStandardStreamableHttpTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 import { buildServer } from "../mcp-src/growth-audit/server";
 import { MemoryStore } from "../mcp-src/growth-audit/store";
 
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const path = (req.url ?? "").split("?")[0];
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
 
-  if (path === "/api/healthz") {
-    res.status(200).json({
-      ok: true,
-      service: "growth-audit",
-      capabilities: {
-        durable: false,
-        retainsLeads: false,
-        recordStore: "this session only — nothing is written to disk",
-      },
-    });
-    return;
-  }
-
-  const store = new MemoryStore();
-  await store.init();
-
-  const server = buildServer(store, store.capabilities);
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-
-  res.on("close", () => {
-    void transport.close();
-    void server.close();
-  });
-
-  try {
-    await server.connect(transport);
-    await transport.handleRequest(req, res, req.body);
-  } catch (err) {
-    console.error("[mcp] request failed:", err);
-    if (!res.headersSent) {
-      res.status(500).json({
-        error: "mcp_request_failed",
-        message: err instanceof Error ? err.message : String(err),
-      });
+    if (url.pathname === "/api/healthz") {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          service: "growth-audit",
+          capabilities: {
+            durable: false,
+            retainsLeads: false,
+            recordStore: "this session only — nothing is written to disk",
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
     }
-  }
-}
+
+    const store = new MemoryStore();
+    await store.init();
+
+    const server = buildServer(store, store.capabilities);
+    const transport = new WebStandardStreamableHttpTransport({ sessionIdGenerator: undefined });
+
+    try {
+      await server.connect(transport);
+      const response = await transport.handleRequest(request);
+      return response;
+    } catch (err) {
+      console.error("[mcp] request failed:", err);
+      return new Response(
+        JSON.stringify({
+          error: "mcp_request_failed",
+          message: err instanceof Error ? err.message : String(err),
+        }),
+        { status: 500, headers: { "content-type": "application/json" } }
+      );
+    }
+  },
+};
