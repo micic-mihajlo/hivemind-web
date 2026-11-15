@@ -1084,7 +1084,7 @@ export function PublicLanding() {
                 [
                   "Client practices",
                   "Hivemind systems run in client practices today. Client names and results are published only with their written permission.",
-                  "clients: active\nnames published: with permission",
+                  "clients: 10+ active\nnames published: with permission",
                 ],
               ].map(([title, copy, stats]) => (
                 <article className="proof-card" data-reveal key={title}>
