@@ -23,7 +23,7 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 import { buildServer } from "../mcp-src/growth-audit/server";
-import { MemoryStore } from "../mcp-src/growth-audit/store";
+import { MemoryStore } from "../mcp-src/growth-audit/store-memory";
 
 export default {
   async fetch(request: Request): Promise<Response> {
