@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const BOOKING_URL =
+export const BOOKING_URL =
   "https://hivemindintelligence.zohobookings.com/4773814000000048056";
 const LINKEDIN_URL = "https://www.linkedin.com/in/kevin-miller-19432b85/";
 
@@ -75,13 +75,13 @@ const scoreTiers = [
   },
 ] as const;
 
-function emitAnalytics(name: string, detail: Record<string, unknown> = {}) {
+export function emitAnalytics(name: string, detail: Record<string, unknown> = {}) {
   window.dispatchEvent(
     new CustomEvent("hivemind:analytics", { detail: { name, ...detail } }),
   );
 }
 
-function useLandingEffects() {
+export function useLandingEffects() {
   useEffect(() => {
     const revealItems = document.querySelectorAll<HTMLElement>("[data-reveal]");
     const reducedMotion = window.matchMedia(
@@ -135,7 +135,7 @@ function useLandingEffects() {
   }, []);
 }
 
-function BookingLink({
+export function BookingLink({
   children,
   className,
 }: {
@@ -512,7 +512,7 @@ function OfflineDemo() {
   );
 }
 
-function Scorecard() {
+export function Scorecard() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
@@ -676,7 +676,7 @@ function Scorecard() {
   );
 }
 
-const faqItems = [
+export const faqItems = [
   [
     "What hardware is required?",
     "A dedicated machine that fits in your office, roughly the size of a small desktop unit. I handle procurement, configuration, and setup. You need an ethernet port and a power outlet.",
@@ -703,26 +703,65 @@ const faqItems = [
   ],
 ] as const;
 
+export function SiteNav({ home = false }: { home?: boolean }) {
+  return (
+    <nav className="site-nav">
+      <div className="nav-inner">
+        <a
+          className="brand"
+          href={home ? "#top" : "/"}
+          aria-label="Hivemind Intelligence home"
+        >
+          <img
+            className="brand-logo"
+            src="/brand/hivemind-horizontal-dark.svg"
+            alt=""
+            width="561"
+            height="164"
+          />
+        </a>
+        <BookingLink className="nav-button">Book the audit</BookingLink>
+      </div>
+    </nav>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer>
+      <div className="site-wrap footer-inner">
+        <span>© 2026 Hivemind Intelligence · Coral Gables, Florida</span>
+        <span>
+          <a href="mailto:kevin@hivemindintelligence.com">
+            kevin@hivemindintelligence.com
+          </a>
+          <span aria-hidden="true"> · </span>
+          <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
+            LinkedIn
+          </a>
+          <span aria-hidden="true"> · </span>
+          <a href="/law-firms">Law firms</a>
+          <span aria-hidden="true"> · </span>
+          <a href="/pricing">Pricing</a>
+          <span aria-hidden="true"> · </span>
+          <a href="/terms">Terms</a>
+          <span aria-hidden="true"> · </span>
+          <a href="/privacy/growth-audit">Privacy</a>
+          <span aria-hidden="true"> · </span>
+          <a href="/support">Support</a>
+        </span>
+      </div>
+    </footer>
+  );
+}
+
 export function PublicLanding() {
   useLandingEffects();
 
   return (
     <div className="landing">
       <div className="scroll-progress" aria-hidden="true" />
-      <nav className="site-nav">
-        <div className="nav-inner">
-          <a className="brand" href="#top" aria-label="Hivemind Intelligence home">
-            <img
-              className="brand-logo"
-              src="/brand/hivemind-horizontal-dark.svg"
-              alt=""
-              width="561"
-              height="164"
-            />
-          </a>
-          <BookingLink className="nav-button">Book the audit</BookingLink>
-        </div>
-      </nav>
+      <SiteNav home />
 
       <main>
         <header className="hero" id="top">
@@ -812,6 +851,12 @@ export function PublicLanding() {
               third-party exposure because processing stays on hardware your
               practice controls.
             </p>
+            <p data-reveal>
+              Unlike the enterprise tiers of Copilot or Gemini, where document
+              content still leaves your premises, a Hivemind node processes it
+              on a machine in your office. You can watch it work with the
+              network cable unplugged.
+            </p>
           </div>
         </section>
 
@@ -824,7 +869,7 @@ export function PublicLanding() {
                 [
                   "01",
                   "Audit",
-                  "Map where admin hours leak and exposure hides. Written findings arrive in one week, whether or not you hire Hivemind afterward.",
+                  "Map where admin hours leak and exposure hides. Written findings arrive in 14 days, whether or not you hire Hivemind afterward.",
                   "$1,500",
                   "Fixed fee. Standalone value.",
                 ],
@@ -832,7 +877,7 @@ export function PublicLanding() {
                   "02",
                   "Install",
                   "Hardware in your office, private models, your top workflows, a written AI usage policy, and staff training.",
-                  "From $4,000",
+                  "From $9,000",
                   "Fixed scope. Live in weeks.",
                 ],
                 [
@@ -865,7 +910,7 @@ export function PublicLanding() {
                 A written decision document, not a sales conversation.
               </h2>
               <p data-reveal>
-                Within one week, receive a prioritized map of where AI can save
+                Within 14 days, receive a prioritized map of where AI can save
                 time, where sensitive information may be exposed, and which
                 controls should come first.
               </p>
@@ -1108,12 +1153,12 @@ export function PublicLanding() {
             <span className="eyebrow" data-reveal>Next step</span>
             <h2 data-reveal>Find out where you stand.</h2>
             <p data-reveal>
-              The audit takes one week and produces written findings you keep:
+              The audit takes 14 days and produces written findings you keep:
               where your hours leak, where your exposure hides, and what to
               automate first.
             </p>
             <p className="pricing-line" data-reveal>
-              AI Practice Audit: $1,500 flat · Installations $4,000–$30,000 by
+              AI Practice Audit: $1,500 flat · Installations $9,000–$50,000 by
               scope · Management from $2,000/mo
             </p>
             <BookingLink className="button button-primary">
@@ -1128,26 +1173,7 @@ export function PublicLanding() {
         <Scorecard />
       </main>
 
-      <footer>
-        <div className="site-wrap footer-inner">
-          <span>© 2026 Hivemind Intelligence · Coral Gables, Florida</span>
-          <span>
-            <a href="mailto:kevin@hivemindintelligence.com">
-              kevin@hivemindintelligence.com
-            </a>
-            <span aria-hidden="true"> · </span>
-            <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
-              LinkedIn
-            </a>
-            <span aria-hidden="true"> · </span>
-            <a href="/terms">Terms</a>
-            <span aria-hidden="true"> · </span>
-            <a href="/privacy/growth-audit">Privacy</a>
-            <span aria-hidden="true"> · </span>
-            <a href="/support">Support</a>
-          </span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

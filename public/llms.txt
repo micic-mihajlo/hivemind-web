@@ -1,0 +1,24 @@
+# Hivemind Intelligence
+
+https://hivemindintelligence.com/
+
+> Hivemind installs private, on-premise AI infrastructure inside small licensed practices (law, medical, dental, therapy). Documents are processed on hardware in the practice's own office, and a person approves every client-facing message. Based in Coral Gables, Florida. Founder: Kevin Miller.
+
+## Offer (prices as of November 2026)
+
+- AI Practice Audit: $1,500 flat, delivered in 14 days. Written findings the practice keeps whether or not it hires Hivemind.
+- Install: $9,000 to $50,000, scoped on workflow complexity and privacy requirements, including any custom training of local models. Hardware in the office, private models, top workflows, a written AI usage policy, staff training.
+- Manage: from $2,000 a month. Monitoring, hardware refresh, model updates, one new workflow every quarter. Cancel anytime.
+
+## Pages
+
+- [Home](https://hivemindintelligence.com/): what Hivemind does and how an engagement works
+- [Law firms](https://hivemindintelligence.com/law-firms): private AI for solo attorneys and small firms
+- [Pricing](https://hivemindintelligence.com/pricing): the three steps and what each includes
+- [Shadow AI Scorecard](https://hivemindintelligence.com/#scorecard): free, five questions, two minutes
+- [Support](https://hivemindintelligence.com/support)
+
+## Contact
+
+- kevin@hivemindintelligence.com
+- Book the audit: https://hivemindintelligence.zohobookings.com/4773814000000048056
