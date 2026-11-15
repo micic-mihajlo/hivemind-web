@@ -1,6 +1,7 @@
-// PROBE: minimal MCP over Vercel Node function (web-standard transport).
+// PROBE: minimal MCP over a Vercel Node function (Node-style req/res handler).
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WebStandardStreamableHttpTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 
 function buildServer(): McpServer {
@@ -22,16 +23,28 @@ function buildServer(): McpServer {
   return server;
 }
 
-export default async function handler(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  if (url.pathname === "/api/healthz") {
-    return new Response(JSON.stringify({ ok: true, service: "hivemind-probe" }), {
-      headers: { "content-type": "application/json" },
-    });
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.url?.split("?")[0] === "/api/healthz") {
+    res.status(200).json({ ok: true, service: "hivemind-probe" });
+    return;
   }
+
   const server = buildServer();
-  const transport = new WebStandardStreamableHttpTransport({ sessionIdGenerator: undefined });
-  await server.connect(transport);
-  const res = await transport.handleRequest(req);
-  return res;
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  res.on("close", () => {
+    void transport.close();
+    void server.close();
+  });
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    console.error("[mcp] request failed:", err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "mcp_request_failed",
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
 }
