@@ -11,8 +11,6 @@
  * tool checks it before promising a user that someone will be in touch.
  */
 
-import { randomUUID } from "node:crypto";
-
 import {
   assertNoRestrictedData,
   redactNote,
@@ -21,6 +19,22 @@ import {
   type ConsentRecord,
   type RequestRecord,
 } from "./lib/privacy";
+
+/**
+ * UUID without `node:crypto`, so this module stays importable on any runtime
+ * (Node, edge, workerd). `globalThis.crypto.randomUUID` is available in Node 19+
+ * and in every edge runtime.
+ */
+function randomUUID(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  // Fallback for older runtimes.
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    const v = ch === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 /**
  * What this deployment can actually persist. Callers MUST consult this before

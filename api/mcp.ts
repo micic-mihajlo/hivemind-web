@@ -33,7 +33,6 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { Readable } from "node:stream";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 import { buildServer } from "../mcp-src/growth-audit/server";
