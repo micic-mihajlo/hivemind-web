@@ -24,7 +24,7 @@ import {
   CONSENT_PURPOSE,
   type ConsentRecord,
 } from "./lib/privacy";
-import type { StoreLike, StorageCapabilities } from "./store";
+import type { StoreLike, StorageCapabilities } from "./store-memory";
 import {
   AUDIT_TOOL,
   SPREADSHEET_TOOL,

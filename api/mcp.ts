@@ -20,7 +20,7 @@
  * "we'll be in touch" while the record evaporates is worse than no tool.
  */
 
-import { WebStandardStreamableHttpTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 import { buildServer } from "../mcp-src/growth-audit/server";
 import { MemoryStore } from "../mcp-src/growth-audit/store";
@@ -48,7 +48,7 @@ export default {
     await store.init();
 
     const server = buildServer(store, store.capabilities);
-    const transport = new WebStandardStreamableHttpTransport({ sessionIdGenerator: undefined });
+    const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined });
 
     try {
       await server.connect(transport);
