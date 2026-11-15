@@ -1,5 +1,6 @@
 import {
   BookingLink,
+  faqItems,
   SiteFooter,
   SiteNav,
   emitAnalytics,
@@ -50,6 +51,16 @@ const tiers = [
   },
 ] as const;
 
+// Reuses answers already published on the homepage FAQ.
+const pricingQuestions = new Set([
+  "What hardware is required?",
+  "How long does installation take?",
+  "What if the audit findings do not justify moving forward?",
+]);
+export const pricingFaq = faqItems.filter(([question]) =>
+  pricingQuestions.has(question),
+);
+
 export function Pricing() {
   useLandingEffects();
 
@@ -66,8 +77,12 @@ export function Pricing() {
               Three steps. <em>Always in this order.</em>
             </h1>
             <p className="page-hero-copy">
-              Every engagement starts with the audit. You see the findings in
-              writing before anyone talks about an install.
+              Every engagement starts with the AI Practice Audit: a $1,500,
+              7-day written review of where admin hours go and where client
+              information is exposed. You see the findings in writing before
+              anyone talks about an install, and an install is hardware in
+              your office rather than a cloud subscription that processes your
+              documents somewhere else.
             </p>
           </div>
         </header>
@@ -88,6 +103,21 @@ export function Pricing() {
                     ))}
                   </ul>
                 </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="muted-section faq-section">
+          <div className="site-wrap narrow align-left">
+            <span className="eyebrow" data-reveal>Common questions</span>
+            <h2 data-reveal>Questions about cost and timing.</h2>
+            <div className="faq-list" data-reveal>
+              {pricingFaq.map(([question, answer]) => (
+                <details key={question}>
+                  <summary>{question}</summary>
+                  <p>{answer}</p>
+                </details>
               ))}
             </div>
           </div>

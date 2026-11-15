@@ -1136,7 +1136,7 @@ export function PublicLanding() {
         <section className="muted-section faq-section">
           <div className="site-wrap narrow align-left">
             <span className="eyebrow" data-reveal>Common questions</span>
-            <h2 data-reveal>Before you book.</h2>
+            <h2 data-reveal>Questions before you book.</h2>
             <div className="faq-list" data-reveal>
               {faqItems.map(([question, answer]) => (
                 <details key={question}>
