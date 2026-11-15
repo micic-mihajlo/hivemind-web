@@ -742,6 +742,8 @@ export function SiteFooter() {
           <span aria-hidden="true"> · </span>
           <a href="/law-firms">Law firms</a>
           <span aria-hidden="true"> · </span>
+          <a href="/medical-practices">Medical practices</a>
+          <span aria-hidden="true"> · </span>
           <a href="/pricing">Pricing</a>
           <span aria-hidden="true"> · </span>
           <a href="/terms">Terms</a>
