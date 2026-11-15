@@ -1430,6 +1430,48 @@ footer {
   transition-delay: 110ms;
 }
 
+.page-hero {
+  padding-block: clamp(4.5rem, 9vw, 7rem);
+}
+
+.page-hero h1 {
+  max-width: 18ch;
+}
+
+.page-hero-copy {
+  max-width: 54ch;
+  margin-bottom: 2.25rem;
+  color: var(--mist) !important;
+  font-size: 1.15rem;
+}
+
+.price-grid {
+  margin-top: 0;
+}
+
+.price-grid .step p {
+  flex: none;
+  margin-top: 1.1rem;
+}
+
+.price-grid .check-list {
+  margin-bottom: 0;
+  font-size: 0.96rem;
+}
+
+.page-link-row {
+  margin: 2rem 0 0;
+  font-weight: 600;
+}
+
+.approval-flow + .compliance-note {
+  margin-top: 2rem;
+}
+
+.button-row-center {
+  justify-content: center;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .nav-button:hover {
     background: #b98c4f;
@@ -1517,6 +1559,7 @@ footer {
 }
 
 @media (max-width: 600px) {
+
   body {
     font-size: 1rem;
   }
