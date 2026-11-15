@@ -38,8 +38,8 @@
 
 type Loaded = {
   transport: typeof import("@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js").WebStandardStreamableHTTPServerTransport;
-  buildServer: typeof import("../mcp-src/growth-audit/server").buildServer;
-  MemoryStore: typeof import("../mcp-src/growth-audit/store-memory").MemoryStore;
+  buildServer: typeof import("./_lib/growth-audit/server.js").buildServer;
+  MemoryStore: typeof import("./_lib/growth-audit/store-memory.js").MemoryStore;
 };
 
 let cached: Loaded | null = null;
@@ -51,9 +51,9 @@ async function loadStages(): Promise<Loaded> {
   try {
     const sdk = await import("@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js");
     stage.push("sdk:ok");
-    const srv = await import("../mcp-src/growth-audit/server");
+    const srv = await import("./_lib/growth-audit/server.js");
     stage.push("server:ok");
-    const mem = await import("../mcp-src/growth-audit/store-memory");
+    const mem = await import("./_lib/growth-audit/store-memory.js");
     stage.push("store:ok");
 
     cached = {
