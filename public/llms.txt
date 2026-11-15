@@ -14,6 +14,7 @@ https://hivemindintelligence.com/
 
 - [Home](https://hivemindintelligence.com/): what Hivemind does and how an engagement works
 - [Law firms](https://hivemindintelligence.com/law-firms): private AI for solo attorneys and small firms
+- [Medical practices](https://hivemindintelligence.com/medical-practices): private AI for medical, dental and therapy practices governed by HIPAA
 - [Pricing](https://hivemindintelligence.com/pricing): the three steps and what each includes
 - [Shadow AI Scorecard](https://hivemindintelligence.com/#scorecard): free, five questions, two minutes
 - [Support](https://hivemindintelligence.com/support)

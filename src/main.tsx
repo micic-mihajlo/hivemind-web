@@ -2,12 +2,19 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { LawFirms } from "./views/LawFirms";
+import { MedicalPractices } from "./views/MedicalPractices";
 import { Pricing } from "./views/Pricing";
 import "./styles.css";
 
 const path = window.location.pathname.replace(/\/+$/, "");
 const Page =
-  path === "/law-firms" ? LawFirms : path === "/pricing" ? Pricing : App;
+  path === "/law-firms"
+    ? LawFirms
+    : path === "/medical-practices"
+      ? MedicalPractices
+      : path === "/pricing"
+        ? Pricing
+        : App;
 
 const root = document.getElementById("root")!;
 const tree = (

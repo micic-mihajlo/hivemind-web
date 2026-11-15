@@ -15,6 +15,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         lawFirms: resolve(__dirname, "law-firms/index.html"),
+        medicalPractices: resolve(__dirname, "medical-practices/index.html"),
         pricing: resolve(__dirname, "pricing/index.html"),
       },
     },

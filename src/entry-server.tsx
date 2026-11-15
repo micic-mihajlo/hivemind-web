@@ -1,7 +1,8 @@
 import { renderToString } from "react-dom/server";
 import { App } from "./App";
 import { LawFirms, lawFaq } from "./views/LawFirms";
-import { Pricing } from "./views/Pricing";
+import { MedicalPractices, medicalFaq } from "./views/MedicalPractices";
+import { Pricing, pricingFaq } from "./views/Pricing";
 import { faqItems } from "./views/PublicLanding";
 
 // Build-time rendering: scripts/prerender.mjs calls this for each page so the
@@ -12,5 +13,12 @@ export const pages = {
     render: () => renderToString(<LawFirms />),
     faq: lawFaq,
   },
-  "pricing/index.html": { render: () => renderToString(<Pricing />), faq: null },
+  "medical-practices/index.html": {
+    render: () => renderToString(<MedicalPractices />),
+    faq: medicalFaq,
+  },
+  "pricing/index.html": {
+    render: () => renderToString(<Pricing />),
+    faq: pricingFaq,
+  },
 } as const;
