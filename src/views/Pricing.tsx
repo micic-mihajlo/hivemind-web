@@ -11,7 +11,7 @@ const tiers = [
     step: "STEP 01",
     name: "AI Practice Audit",
     price: "$1,500",
-    note: "Flat fee. Delivered in 14 days.",
+    note: "Flat fee. Delivered in 7 days.",
     copy: "A written decision document for your practice. It is yours whether or not you hire Hivemind afterward.",
     items: [
       "Readiness Scorecard for your practice",

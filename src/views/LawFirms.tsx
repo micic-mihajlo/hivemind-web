@@ -163,7 +163,7 @@ export function LawFirms() {
                   "The AI Practice Audit",
                   "Interviews with your team, a map of where hours go and where client information has been, and a ranked list of what to fix first. Yours whether or not you hire Hivemind afterward.",
                   "$1,500",
-                  "Fixed fee. 14 days.",
+                  "Fixed fee. 7 days.",
                 ],
                 [
                   "IF IT FITS",

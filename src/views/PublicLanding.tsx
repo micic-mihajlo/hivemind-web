@@ -869,7 +869,7 @@ export function PublicLanding() {
                 [
                   "01",
                   "Audit",
-                  "Map where admin hours leak and exposure hides. Written findings arrive in 14 days, whether or not you hire Hivemind afterward.",
+                  "Map where admin hours leak and exposure hides. Written findings arrive in 7 days, whether or not you hire Hivemind afterward.",
                   "$1,500",
                   "Fixed fee. Standalone value.",
                 ],
@@ -910,7 +910,7 @@ export function PublicLanding() {
                 A written decision document, not a sales conversation.
               </h2>
               <p data-reveal>
-                Within 14 days, receive a prioritized map of where AI can save
+                Within 7 days, receive a prioritized map of where AI can save
                 time, where sensitive information may be exposed, and which
                 controls should come first.
               </p>
@@ -1064,10 +1064,10 @@ export function PublicLanding() {
           <div className="circuit-pattern" aria-hidden="true" />
           <div className="site-wrap">
             <span className="eyebrow" data-reveal>Proof</span>
-            <h2 data-reveal>No rented logos. No purchased reviews.</h2>
+            <h2 data-reveal>Proof you can check yourself.</h2>
             <p className="section-intro" data-reveal>
-              Hivemind is early. Real demonstrations are more useful than fake
-              social proof.
+              No rented logos and no purchased reviews. The strongest proof is
+              a demonstration you watch in your own office.
             </p>
             <div className="three-column proof-grid">
               {[
@@ -1082,9 +1082,9 @@ export function PublicLanding() {
                   "format: in person\nduration: 30 minutes\ntrust required: none",
                 ],
                 [
-                  "Founding practices",
-                  "A limited cohort receives the full build and a direct line to Kevin at founding pricing in exchange for a named reference.",
-                  "cohort: limited\npricing: founding\nyour role: named reference",
+                  "Client practices",
+                  "Hivemind systems run in client practices today. Client names and results are published only with their written permission.",
+                  "clients: active\nnames published: with permission",
                 ],
               ].map(([title, copy, stats]) => (
                 <article className="proof-card" data-reveal key={title}>
@@ -1095,8 +1095,8 @@ export function PublicLanding() {
               ))}
             </div>
             <blockquote data-reveal>
-              When testimonials appear here, they will have full names and
-              practices attached. If they do not, do not trust them.
+              Client testimonials are published here only with written
+              permission, with full names and practices attached.
             </blockquote>
           </div>
         </section>
@@ -1153,7 +1153,7 @@ export function PublicLanding() {
             <span className="eyebrow" data-reveal>Next step</span>
             <h2 data-reveal>Find out where you stand.</h2>
             <p data-reveal>
-              The audit takes 14 days and produces written findings you keep:
+              The audit takes 7 days and produces written findings you keep:
               where your hours leak, where your exposure hides, and what to
               automate first.
             </p>

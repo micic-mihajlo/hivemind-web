@@ -6,7 +6,7 @@ https://hivemindintelligence.com/
 
 ## Offer (prices as of November 2026)
 
-- AI Practice Audit: $1,500 flat, delivered in 14 days. Written findings the practice keeps whether or not it hires Hivemind.
+- AI Practice Audit: $1,500 flat, delivered in 7 days. Written findings the practice keeps whether or not it hires Hivemind.
 - Install: $9,000 to $50,000, scoped on workflow complexity and privacy requirements, including any custom training of local models. Hardware in the office, private models, top workflows, a written AI usage policy, staff training.
 - Manage: from $2,000 a month. Monitoring, hardware refresh, model updates, one new workflow every quarter. Cancel anytime.
 
